@@ -42,17 +42,22 @@ def filter_line(line, filters):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    
+
     parser.add_argument('src', type=str, help="source file")
-    parser.add_argument('-u', '--url-filter', help='filter out lines containing urls', action='store_true')
-    parser.add_argument('-a', '--ascii-filter', help='filter out line with non-ascii characters', action='store_true')
+    parser.add_argument('-u', '--url-filter',
+                        help='filter out lines containing urls', action='store_true')
+    parser.add_argument('-a', '--ascii-filter',
+                        help='filter out line with non-ascii characters', action='store_true')
     parser.add_argument('--re', type=str, help='regular expression filter')
     parser.add_argument('--blacklist', type=str, help='blacklisted words')
-    parser.add_argument('-L', '--letter-ratio', type=float, help='filter out tweets with low letter ratio')
-    parser.add_argument('-R', '--real-word-ratio', type=float, help='filter out tweets with low real-word ratio')
-    parser.add_argument('-l', '--line-length', type=str, help='allowed line lengths')
-    parser.add_argument('-i', '--ignore-case', help='regex is case-insensitive', action='store_true')
-
+    parser.add_argument('-L', '--letter-ratio', type=float,
+                        help='filter out tweets with low letter ratio')
+    parser.add_argument('-R', '--real-word-ratio', type=float,
+                        help='filter out tweets with low real-word ratio')
+    parser.add_argument('-l', '--line-length', type=str,
+                        help='allowed line lengths')
+    parser.add_argument('-i', '--ignore-case',
+                        help='regex is case-insensitive', action='store_true')
 
     args = parser.parse_args()
     poet_filters = []
@@ -62,7 +67,6 @@ def main():
 
     # unpack args.src
     source = open(args.src)
-
 
     if args.url_filter:
         poet_filters.append(filters.url_filter)
@@ -77,18 +81,15 @@ def main():
     if args.letter_ratio:
         poet_filters.append(filters.low_letter_filter(args.letter_ratio))
     if args.real_word_ratio:
-        poet_filters.append(filters.real_word_ratio_filter(args.real_word_ratio))
+        poet_filters.append(
+            filters.real_word_ratio_filter(args.real_word_ratio))
     if args.re:
         poet_filters.append(filters.regex_filter(args.re, args.ignore_case))
-
 
     for l in get_lines(source, poet_filters):
         print(l.rstrip())
 
     source.close()
-
-
-
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import re
 import functools
 
+import utils
+
 """
 various filters for operating on a list of strings (tweets, mainly)
 a philosophical question: should a filter return True when an item
@@ -121,6 +123,7 @@ def regex_check(text, pattern, ignore_case):
 
 
 def regex_filter(pattern, ignore_case):
+    pattern = _convert_custom_regex(pattern)
     kwargs = {'pattern': pattern, 'ignore_case': ignore_case}
     return functools.partial(regex_check, **kwargs)
 
@@ -130,10 +133,9 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
     becomes pass/fail if cutoff is not None
     """
     if not hasattr(real_word_ratio, "words"):
-        import nltk
-        real_word_ratio.words = set(w.lower() for w in nltk.corpus.words.words())
-    # sentance = format_input(sentance)
-    sentance = _de_camel(sentance)
+        real_word_ratio.words = utils.wordlist()
+
+    sentance = utils._de_camel(sentance)
 
     sentance = re.sub(r'[#,\.\?\!]', '', sentance)
     sentance_words = [w.lower() for w in sentance.split()]
@@ -141,6 +143,8 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
         return 0
 
     are_words = [w for w in sentance_words if w in real_word_ratio.words]
+    # debuging:
+    # not_words = set(sentance_words).difference(set(are_words))
 
     ratio = float(len(''.join(are_words))) / len(''.join(sentance_words))
     
@@ -160,31 +164,27 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
 def real_word_ratio_filter(cutoff):
     return functools.partial(real_word_ratio, **{'cutoff': cutoff})
 
+
 def emoticons(text):
     emotes = re.findall(r'[=:;].{0,2}[\(\)\[\]\{\}|\\\$DpoO0\*]+', text)
     return emotes
 
-# helpers etc
 
-def _strip_string(text):
+def _convert_custom_regex(in_re):
     """
-    for removing punctuation for certain tests
+    takes a string in our custom regex format
+    and converts it to acceptable regex 
     """
+    regex = re.sub(r'(?:[^\\]~|\A~)([a-zA-Z]*)',
+        lambda m: '(%s)' % '|'.join(utils.synonyms(m.group(1))),
+        in_re) # expand '~word' to a (list|of|synonyms)
 
-    return re.sub(r'[^a-zA-Z]', '',  text).lower()
-
-def _de_camel(word):
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1 \2', word)
-    return re.sub('([a-z0-9])([A-Z])', r'\1 \2', s1).lower()
+    regex = re.sub(r'\\~', '~', regex) # replace escaped tildes 
+    return regex
 
 
 def main():
     pass
-    # import argparse
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('arg1', type=str, help="required argument")
-    # parser.add_argument('arg2', '--argument-2', help='optional boolean argument', action="store_true")
-    # args = parser.parse_args()
 
 
 if __name__ == "__main__":
