@@ -48,6 +48,17 @@ def tricky_characters(text, debug=False):
 
 
 #variable filters:
+def blacklist_check(text, blacklist):
+    for word in (_strip_string(w) for w in text.split()):
+        if word in blacklist:
+            return True
+    return False
+
+
+def blacklist_filter(blacklist):
+    assert(len(blacklist))
+    return functools.partial(blacklist_check, **{'blacklist': blacklist})
+
 
 def low_letter_ratio(text, cutoff=0.8):
     t = re.sub(r'[^a-zA-Z ]', '', text)
@@ -55,22 +66,50 @@ def low_letter_ratio(text, cutoff=0.8):
         return True
     return False
 
+
 def low_letter_filter(cutoff):
-    assert(0.0 < cutoff < 1.0):
+    assert(0.0 < cutoff < 1.0)
     return functools.partial(low_letter_ratio, **{'cutoff': cutoff})
 
-def blacklist_filter(text, blacklist):
-    for word in (_strip_string(w) for w in text.split()):
-        if word in blacklist:
-            return True
-    return False
 
-def _strip_string(text):
-    """
-    for removing punctuation for certain tests
-    """
+def line_length_check(text, line_lengths):
+    if len(text) in line_lengths:
+        return False
+    return True
 
-    return re.sub(r'[^a-zA-Z]', '',  text).lower()
+def line_length_filter(line_lengths):
+    """
+    line_lengths should be a string of format 0,1,5-8.
+    this would represent lengths 0,1,5,6,7,8.
+    line lengths can also be a tuple of ints.
+    """
+    lengths = _parse_range_string(line_lengths)
+    if not len(lengths):
+        raise ValueError("no line lengths received")
+
+    return functools.partial(line_length_check, **{'line_lengths': lengths})
+
+
+
+
+def _parse_range_string(range_string):
+    """
+    parses strings that represent a range of ints.
+    """
+    
+    if re.search(r'[^,0-9\-]', range_string):
+        raise ValueError("invalid characters in range")
+
+    result = set(int(x) for x in re.findall(r'[0-9]+', range_string))
+    ranges = re.findall(r'([0-9]+)\-([0-9]+)', range_string)
+    if len(ranges):
+        for r in ranges:
+            result.update([x for x in range(int(r[0]), int(r[1])+1)])
+
+    return tuple(result)
+
+
+
 
 
 def real_word_ratio(sentance, debug=False):
@@ -97,6 +136,15 @@ def real_word_ratio(sentance, debug=False):
 
 def emoticons(text):
     pass
+
+# helpers etc
+
+def _strip_string(text):
+    """
+    for removing punctuation for certain tests
+    """
+
+    return re.sub(r'[^a-zA-Z]', '',  text).lower()
 
 
 def main():

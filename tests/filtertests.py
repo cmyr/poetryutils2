@@ -1,6 +1,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
-import filters
+import poet.filters as filters
 import functools
 
 
@@ -48,6 +48,22 @@ def test_low_letter_ratio(tests):
 
 
 
+def test_range_parsing():
+    t1 = "1,2,3,4,5-9,21-26"
+    a1 = (1,2,3,4,5,6,7,8,9,21,22,23,24,25,26)
+
+    t1 = filters._parse_range_string(t1)
+    assert t1 == a1, print(t1)
+
+    t2 = "12-15, 16?"
+    try:
+        filters._parse_range_string(t2)
+        assert(False)
+    except ValueError as err:
+        print(err)
+
+
+
 def lines_from_file(filepath):
     lines = None
     with open(filepath) as f:
@@ -65,6 +81,7 @@ def main():
     test_hashtags(tests)
     test_contains_url(tests)
     test_low_letter_ratio(tests)
+    test_range_parsing()
 
 
 if __name__ == "__main__":
