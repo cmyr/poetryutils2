@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import poet.filters as filters
 import functools
+import nltk
 
 
 def test_tricky_chars(tests):
@@ -63,13 +64,13 @@ def test_range_parsing():
         print(err)
 
 
+def test_emoticons(tests):
+    for t in tests:
+        tt = filters.emoticons(t)
+        if tt:
+            print(tt)
 
-def lines_from_file(filepath):
-    lines = None
-    with open(filepath) as f:
-        lines = f.read().splitlines()
 
-    return lines
 
 
 
@@ -82,6 +83,7 @@ def main():
     test_contains_url(tests)
     test_low_letter_ratio(tests)
     test_range_parsing()
+    test_emoticons(tests)
 
 
 if __name__ == "__main__":

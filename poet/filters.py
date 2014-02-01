@@ -10,26 +10,26 @@ passes, or when it fails?
 """
 
 # simple filters:
-def contains_url(text):
+def url_filter(text):
     if re.search(r'http://[a-zA-Z0-9\./]*\w', text):
         return True
     else:
         return False
 
 
-def contains_screenname(text):
+def screenname_filter(text):
     if re.search(r'@[a-zA-Z0-9]+', text):
         return True
     else:
         return False
 
-def contains_hashtag(text):
+def hashtag_filter(text):
     if re.search(r'#[a-zA-Z0-9]+', text):
         return True
     else:
         return False
 
-def contains_numerals(text):
+def numeral_filter(text):
     if re.search(r'[0-9]', text):
         return True
 
@@ -45,6 +45,11 @@ def tricky_characters(text, debug=False):
         print()
         print(re.findall(ur'[\u0080-\u024F]', text))
     return count
+
+def tricky_char_filter(text):
+    if tricky_characters(text):
+        return True
+    return False
 
 
 #variable filters:
@@ -90,8 +95,6 @@ def line_length_filter(line_lengths):
     return functools.partial(line_length_check, **{'line_lengths': lengths})
 
 
-
-
 def _parse_range_string(range_string):
     """
     parses strings that represent a range of ints.
@@ -109,17 +112,28 @@ def _parse_range_string(range_string):
     return tuple(result)
 
 
+def regex_check(text, pattern, ignore_case):
+    if ignore_case and re.search(pattern, text, flags=re.I):
+        return False
+    elif not ignore_case and re.search(pattern, text):
+        return False
+    return True
 
 
+def regex_filter(pattern, ignore_case):
+    kwargs = {'pattern': pattern, 'ignore_case': ignore_case}
+    return functools.partial(regex_check, **kwargs)
 
-def real_word_ratio(sentance, debug=False):
+
+def real_word_ratio(sentance, debug=False, cutoff=None):
     """
-    is not currently pass/fail
+    becomes pass/fail if cutoff is not None
     """
     if not hasattr(real_word_ratio, "words"):
+        import nltk
         real_word_ratio.words = set(w.lower() for w in nltk.corpus.words.words())
     # sentance = format_input(sentance)
-    sentance = de_camel(sentance)
+    sentance = _de_camel(sentance)
 
     sentance = re.sub(r'[#,\.\?\!]', '', sentance)
     sentance_words = [w.lower() for w in sentance.split()]
@@ -129,13 +143,26 @@ def real_word_ratio(sentance, debug=False):
     are_words = [w for w in sentance_words if w in real_word_ratio.words]
 
     ratio = float(len(''.join(are_words))) / len(''.join(sentance_words))
+    
+    # pass/fail
+    if cutoff > 0:
+        if ratio < cutoff:
+            return True
+        else:
+            return False
+
+
     if debug:
         print('debugging real word ratio:')
         print(sentance, sentance_words, are_words, ratio, sep='\n')
     return ratio
 
+def real_word_ratio_filter(cutoff):
+    return functools.partial(real_word_ratio, **{'cutoff': cutoff})
+
 def emoticons(text):
-    pass
+    emotes = re.findall(r'[=:;].{0,2}[\(\)\[\]\{\}|\\\$DpoO0\*]+', text)
+    return emotes
 
 # helpers etc
 
@@ -145,6 +172,10 @@ def _strip_string(text):
     """
 
     return re.sub(r'[^a-zA-Z]', '',  text).lower()
+
+def _de_camel(word):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1 \2', word)
+    return re.sub('([a-z0-9])([A-Z])', r'\1 \2', s1).lower()
 
 
 def main():
