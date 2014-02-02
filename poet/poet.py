@@ -1,18 +1,10 @@
+"""
+poetry utilities
+""" 
+
 from __future__ import print_function
 import filters
 
-
-"""
-a proper refactoring of poetry utils
-first off: input
-input can be either:
-    - a file
-    - an iter of a) strings or b) dicts
-    - if dicts, must include a getattr key
-
-
-in this final case, 
-"""
 
 
 def get_lines(source, filters, line_key=None):
@@ -41,7 +33,7 @@ def filter_line(line, filters):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument('src', type=str, help="source file")
     parser.add_argument('-u', '--url-filter',

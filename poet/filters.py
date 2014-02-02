@@ -12,6 +12,8 @@ passes, or when it fails?
 """
 
 # simple filters:
+
+
 def url_filter(text):
     if re.search(r'http://[a-zA-Z0-9\./]*\w', text):
         return True
@@ -25,17 +27,20 @@ def screenname_filter(text):
     else:
         return False
 
+
 def hashtag_filter(text):
     if re.search(r'#[a-zA-Z0-9]+', text):
         return True
     else:
         return False
 
+
 def numeral_filter(text):
     if re.search(r'[0-9]', text):
         return True
 
     return False
+
 
 def tricky_characters(text, debug=False):
     """
@@ -48,15 +53,16 @@ def tricky_characters(text, debug=False):
         print(re.findall(ur'[\u0080-\u024F]', text))
     return count
 
+
 def tricky_char_filter(text):
     if tricky_characters(text):
         return True
     return False
 
 
-#variable filters:
+# variable filters:
 def blacklist_check(text, blacklist):
-    for word in (_strip_string(w) for w in text.split()):
+    for word in (utils._strip_string(w) for w in text.split()):
         if word in blacklist:
             return True
     return False
@@ -84,6 +90,7 @@ def line_length_check(text, line_lengths):
         return False
     return True
 
+
 def line_length_filter(line_lengths):
     """
     line_lengths should be a string of format 0,1,5-8.
@@ -101,7 +108,7 @@ def _parse_range_string(range_string):
     """
     parses strings that represent a range of ints.
     """
-    
+
     if re.search(r'[^,0-9\-]', range_string):
         raise ValueError("invalid characters in range")
 
@@ -109,7 +116,7 @@ def _parse_range_string(range_string):
     ranges = re.findall(r'([0-9]+)\-([0-9]+)', range_string)
     if len(ranges):
         for r in ranges:
-            result.update([x for x in range(int(r[0]), int(r[1])+1)])
+            result.update([x for x in range(int(r[0]), int(r[1]) + 1)])
 
     return tuple(result)
 
@@ -147,7 +154,7 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
     # not_words = set(sentance_words).difference(set(are_words))
 
     ratio = float(len(''.join(are_words))) / len(''.join(sentance_words))
-    
+
     # pass/fail
     if cutoff > 0:
         if ratio < cutoff:
@@ -155,17 +162,18 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
         else:
             return False
 
-
     if debug:
         print('debugging real word ratio:')
         print(sentance, sentance_words, are_words, ratio, sep='\n')
     return ratio
+
 
 def real_word_ratio_filter(cutoff):
     return functools.partial(real_word_ratio, **{'cutoff': cutoff})
 
 
 def emoticons(text):
+    # non functional
     emotes = re.findall(r'[=:;].{0,2}[\(\)\[\]\{\}|\\\$DpoO0\*]+', text)
     return emotes
 
@@ -176,10 +184,10 @@ def _convert_custom_regex(in_re):
     and converts it to acceptable regex 
     """
     regex = re.sub(r'(?:[^\\]~|\A~)([a-zA-Z]*)',
-        lambda m: '(%s)' % '|'.join(utils.synonyms(m.group(1))),
-        in_re) # expand '~word' to a (list|of|synonyms)
+                   lambda m: '(%s)' % '|'.join(utils.synonyms(m.group(1))),
+                   in_re)  # expand '~word' to a (list|of|synonyms)
 
-    regex = re.sub(r'\\~', '~', regex) # replace escaped tildes 
+    regex = re.sub(r'\\~', '~', regex)  # replace escaped tildes
     return regex
 
 

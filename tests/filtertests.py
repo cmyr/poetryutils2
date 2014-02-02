@@ -2,7 +2,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import poet.filters as filters
 import functools
-import nltk
 
 
 def test_tricky_chars(tests):
@@ -72,7 +71,8 @@ def test_emoticons(tests):
 
 
 
-
+# def test_lines():
+#     return lines_from_file('100k.txt')
 
 
 
