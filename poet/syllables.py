@@ -27,6 +27,7 @@ for i in range(len(fallback_subsyl)):
 for i in range(len(fallback_addsyl)):
     fallback_addsyl[i] = re.compile(fallback_addsyl[i])
 
+
 def _normalize_word(word):
     return word.strip().lower()
 
@@ -36,7 +37,6 @@ for line in special_syllables:
         toks = line.split()
         assert len(toks) == 2
         fallback_cache[_normalize_word(toks[0])] = int(toks[1])
-
 
 
 def syllables_in_number(number):
@@ -58,7 +58,6 @@ def count_syllables(sentance, debug=False, cutoff=None):
         print('received sentance: %s' % sentance)
         print('formatted sentance: %s' % sentance)
 
-
     words = [w for w in sentance.split() if w.isalpha()]
 
     if debug:
@@ -67,13 +66,11 @@ def count_syllables(sentance, debug=False, cutoff=None):
         if nonwords:
             print('found nonwords: %s' % repr(words))
 
-
     for w in words:
-        # if is_camel(w):  
+        # if is_camel(w):
         #     sylls = count_syllables(de_camel(w))
         # else:
         sylls = _count(w)
-
 
         count += sylls
         if cutoff and count > cutoff:
@@ -81,7 +78,7 @@ def count_syllables(sentance, debug=False, cutoff=None):
             # what do we want to return, in this case?
 
         if debug:
-            print('%s\t\t\t%d' %(w, sylls))
+            print('%s\t\t\t%d' % (w, sylls))
 
     if debug:
         print('total\t\t\t%d' % count)
@@ -100,14 +97,16 @@ def count_syllables(sentance, debug=False, cutoff=None):
 
 LINK_RE = re.compile(r'http://[a-zA-Z0-9\./]*\w')
 APOST_RE = re.compile(r'(\w)\'(\w)')
-PUNCT_RE = re.compile(r'[,#!;~\?\.\'\"\:\(\)\-]')
+PUNCT_RE = re.compile(r'[,#!;~\?\.\'\"\:\(\)\-\*]')
+
 
 def _format_input(sentance):
     text = utils.fix_hashtags(sentance)
-    text = re.sub(r'&', ' and ', text) #  handle ampersands
+    text = re.sub(r'&', ' and ', text)  # handle ampersands
     text = LINK_RE.sub('(link)', text)  # remove links
-    text = APOST_RE.sub(r'\1\2', text) # contract it's, isn't, wasn't etc.
+    text = APOST_RE.sub(r'\1\2', text)  # contract it's, isn't, wasn't etc.
     text = PUNCT_RE.sub(' ', text)  # remove punctuation
+    text = re.sub(r'[^a-zA-Z ]', '', text) # remove everything else
     text = re.sub(r' +', ' ', text)  # redudent spaces
     return text
 
@@ -116,19 +115,19 @@ def _count(word, debug=False):
     # global fallback_cache
 
     word = _normalize_word(word)
+    orig_word = word
 
     if not word:
         return 0
 
-    # Remove final silent 'e'
-    if word[-1] == "e":
-        word = word[:-1]
-        
     # Check for a cached syllable count
-    count = fallback_cache.get(word, -1)
+    count = fallback_cache.get(orig_word, -1)
     if count > 0:
         return count
 
+    # Remove final silent 'e'
+    if word[-1] == "e":
+        word = word[:-1]
 
     # Count vowel groups
     count = 0
@@ -148,16 +147,17 @@ def _count(word, debug=False):
             count -= 1
 
     # Cache the syllable count
-    
+
     if count == 0:
         count = 1
+
+    fallback_cache[orig_word] = count
     
-    fallback_cache[word] = count
     return count
 
-###
-### Phoneme-driven syllable counting
-###
+#
+# Phoneme-driven syllable counting
+#
 
 # def count_decomp(decomp):
 #     count = 0

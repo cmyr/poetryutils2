@@ -10,13 +10,13 @@ def test_tricky_chars(tests):
         if r:
             print(t, r)
 
+
 def test_hashtags(tests):
     print(filter(filters.contains_hashtag, tests))
 
+
 def test_contains_url(tests):
     print(filter(filters.contains_url, tests))
-
-
 
 
     # all_fails = set()
@@ -26,16 +26,15 @@ def test_contains_url(tests):
     #     fails = set([y for y,z in grades if z < cutoff])
     #     fails = fails.difference(all_fails)
     #     all_fails = all_fails.union(fails)
-
     #     for f in fails:
     #         print(f)
-
 def test_low_letter_ratio(tests):
 
     all_fails = set()
     for i in range(1, 12):
         cutoff = float(i) * 0.1
-        func = functools.partial(filters.low_letter_ratio, **{'cutoff':cutoff})
+        func = functools.partial(
+            filters.low_letter_ratio, **{'cutoff': cutoff})
 
         fails = set(filter(func, tests))
         fails.difference_update(all_fails)
@@ -47,10 +46,9 @@ def test_low_letter_ratio(tests):
         print('total fails:', len(all_fails))
 
 
-
 def test_range_parsing():
     t1 = "1,2,3,4,5-9,21-26"
-    a1 = (1,2,3,4,5,6,7,8,9,21,22,23,24,25,26)
+    a1 = (1, 2, 3, 4, 5, 6, 7, 8, 9, 21, 22, 23, 24, 25, 26)
 
     t1 = filters._parse_range_string(t1)
     assert t1 == a1, print(t1)
@@ -70,12 +68,8 @@ def test_emoticons(tests):
             print(tt)
 
 
-
 # def test_lines():
 #     return lines_from_file('100k.txt')
-
-
-
 def main():
     tests = lines_from_file('2ktst.txt')
     test_tricky_chars(tests)

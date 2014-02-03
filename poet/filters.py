@@ -1,9 +1,11 @@
 from __future__ import print_function
 from __future__ import unicode_literals
+
 import re
 import functools
 
 import utils
+import syllables
 
 """
 various filters for operating on a list of strings (tweets, mainly)
@@ -48,6 +50,7 @@ def tricky_characters(text, debug=False):
     """
 
     count = len(re.findall(ur'[\u0080-\u024F]', text))
+
     if count and debug:
         print()
         print(re.findall(ur'[\u0080-\u024F]', text))
@@ -104,6 +107,24 @@ def line_length_filter(line_lengths):
     return functools.partial(line_length_check, **{'line_lengths': lengths})
 
 
+def syllable_count_check(text, syllable_counts, max_syllables):
+    count = syllables.count_syllables(text, cutoff=max_syllables)
+    if count in syllable_counts:
+        return False
+
+    return True
+
+
+def syllable_count_filter(syllable_counts):
+    counts = _parse_range_string(syllable_counts)
+    if not len(counts):
+        raise ValueError("please specify a range of syllable counts")
+
+    kwargs = {'syllable_counts': counts, 'max_syllables': max(counts)}
+    return functools.partial(syllable_count_check, **kwargs)
+
+
+
 def _parse_range_string(range_string):
     """
     parses strings that represent a range of ints.
@@ -142,7 +163,7 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
     if not hasattr(real_word_ratio, "words"):
         real_word_ratio.words = utils.wordlist()
 
-    sentance = utils._de_camel(sentance)
+    sentance = utils.fix_hashtags(sentance)
 
     sentance = re.sub(r'[#,\.\?\!]', '', sentance)
     sentance_words = [w.lower() for w in sentance.split()]

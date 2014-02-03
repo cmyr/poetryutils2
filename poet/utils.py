@@ -1,5 +1,5 @@
 from __future__ import print_function
-
+from __future__ import unicode_literals
 import re
 
 
@@ -31,6 +31,8 @@ def fix_hashtags(text):
         text = re.sub(h, fix, text, count=1)
     return text
 
+# def sub_non_latin_chars(text):
+#     return re.sub(ur'[\u00FF-\u024F]', '', text)
 
 def _find_hashtags(text):
     hashtags = re.findall(r'#(?:[A-Z][a-z]+)+', text)

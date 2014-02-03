@@ -144,7 +144,11 @@ colin_words = [
 'kindle 2',
 'beyonce 3',
 'bored 1',
-'tongue 1'
+'tongue 1',
+'facetime 2',
+'science 2',
+'whistle 2',
+'ion 2'
 ]
 
 internet_syllables = [
