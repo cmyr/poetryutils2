@@ -3,6 +3,7 @@ shit
 fuck
 shitting
 fucking
+fucked
 shits
 fucks
 fuckers

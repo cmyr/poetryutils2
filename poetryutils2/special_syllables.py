@@ -151,7 +151,17 @@ colin_words = [
 'ion 2',
 'braves 1',
 'soaked 1',
-'google 2'
+'google 2',
+'schedule 3',
+'proved 1',
+'cool 1',
+'cooked 1',
+'framed 1',
+'everything 3',
+'wiggle 2',
+'turtle 2',
+'earned 1',
+'called 1'
 ]
 
 internet_syllables = [

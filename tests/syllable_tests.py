@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from __future__ import unicode_literals
-import poet
+import poetryutils2
 
 test_data = """ pow 1
 #pow 1
@@ -310,6 +310,16 @@ science 2
 whistle 2
 everything 3
 ashes 2
+wedding 2
+ugh 1
+night 1
+cool 1
+cooked 1
+framed 1
+wiggle 2
+awkward 2
+turtle 2
+earned 1
 """
 
 
@@ -318,7 +328,7 @@ def test_syllables():
     tests = [tuple(t.strip().split()) for t in tests if len(t)]
     tests = [(a, int(b)) for a,b in tests]
     for t in tests:
-        result = poet.count_syllables(t[0])
+        result = poetryutils2.count_syllables(t[0])
         # print('returned %d' % result)
         if result != t[1]:
             print(t[0], t[1], result)
