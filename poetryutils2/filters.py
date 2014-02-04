@@ -3,11 +3,13 @@ from __future__ import unicode_literals
 
 import re
 import functools
+import random
 
 import Stemmer
 
 import utils
 import syllables
+import wordsets
 
 
 """
@@ -20,6 +22,7 @@ passes, or when it fails?
 
 
 def url_filter(text):
+    """filters out urls"""
     if re.search(r'http://[a-zA-Z0-9\./]*\w', text):
         return True
     else:
@@ -27,6 +30,7 @@ def url_filter(text):
 
 
 def screenname_filter(text):
+    """filters out @names"""
     if re.search(r'@[a-zA-Z0-9]+', text):
         return True
     else:
@@ -34,6 +38,7 @@ def screenname_filter(text):
 
 
 def hashtag_filter(text):
+    """filters out hashtags"""
     if re.search(r'#[a-zA-Z0-9]+', text):
         return True
     else:
@@ -41,6 +46,7 @@ def hashtag_filter(text):
 
 
 def numeral_filter(text):
+    """filters text containing numerals"""
     if re.search(r'[0-9]', text):
         return True
 
@@ -65,6 +71,7 @@ def numeral_filter(text):
 #     return False
 
 def ascii_filter(text):
+    """filters out non-ascii text"""
     try:
         text.decode('ascii')
     except UnicodeEncodeError:
@@ -72,16 +79,34 @@ def ascii_filter(text):
     return False
 
 # variable filters:
-def blacklist_check(text, blacklist):
+
+
+def blacklist_check(text, blacklist, leakage=0):
+    """filter words from a blacklist"""
+    assert 0.0 <= leakage < 1.0, 'illegal value in blacklist check'
+
     for word in (utils._strip_string(w) for w in text.split()):
         if word in blacklist:
+            if leakage:
+                leak_chance = leakage * 100  # %
+                leak = random.randrange(0, 100)
+                if leak > leak_chance:
+                    return False
             return True
     return False
 
 
 def blacklist_filter(blacklist):
     assert(len(blacklist))
-    return functools.partial(blacklist_check, **{'blacklist': blacklist})
+    assert isinstance(blacklist, set) or isinstance(blacklist, list)
+
+    f = functools.partial(blacklist_check, **{'blacklist': blacklist})
+    f.__doc__ = "filtering words: %s" % repr(blacklist)
+    return f
+
+def swears_filter(leakage=0):
+    kwargs = {'blacklist': wordsets.swears, 'leakage': leakage}
+    return functools.partial(blacklist_check, **kwargs)
 
 
 def low_letter_ratio(text, cutoff=0.8):
@@ -96,7 +121,9 @@ def low_letter_ratio(text, cutoff=0.8):
 
 def low_letter_filter(cutoff):
     assert(0.0 < cutoff < 1.0)
-    return functools.partial(low_letter_ratio, **{'cutoff': cutoff})
+    f = functools.partial(low_letter_ratio, **{'cutoff': cutoff})
+    f.__doc__ = "filtering tweets with letter ratio below %0.2f" % cutoff
+    return f
 
 
 def line_length_check(text, line_lengths):
@@ -115,7 +142,9 @@ def line_length_filter(line_lengths):
     if not len(lengths):
         raise ValueError("no line lengths received")
 
-    return functools.partial(line_length_check, **{'line_lengths': lengths})
+    f = functools.partial(line_length_check, **{'line_lengths': lengths})
+    f.__doc__ = "filtering line lengths to %s" % repr(lengths)
+    return f
 
 
 def syllable_count_check(text, syllable_counts, max_syllables):
@@ -132,9 +161,9 @@ def syllable_count_filter(syllable_counts):
         raise ValueError("please specify a range of syllable counts")
 
     kwargs = {'syllable_counts': counts, 'max_syllables': max(counts)}
-    return functools.partial(syllable_count_check, **kwargs)
-
-
+    f = functools.partial(syllable_count_check, **kwargs)
+    f.__doc__ = "filtering syllable counts to %s" % repr(counts)
+    return f
 
 def _parse_range_string(range_string):
     """
@@ -164,7 +193,12 @@ def regex_check(text, pattern, ignore_case):
 def regex_filter(pattern, ignore_case):
     pattern = _convert_custom_regex(pattern)
     kwargs = {'pattern': pattern, 'ignore_case': ignore_case}
-    return functools.partial(regex_check, **kwargs)
+    f = functools.partial(regex_check, **kwargs)
+    f.__doc__ = "regex pattern: %s" % pattern
+    if ignore_case:
+        f.__doc__ += " (case-insensitive)"
+
+    return f
 
 
 def real_word_ratio(sentance, debug=False, cutoff=None):
@@ -213,7 +247,7 @@ def is_real_word(word, debug=False):
         return True
 
   # now this is a bunch of stemming handlers for plurals and tenses etc.
-    if word[-1] =='s':
+    if word[-1] == 's':
         # cheap handling of plurals not in our dict
         return is_real_word(word[:-1])
     elif word[-1] in {'g', 'd', 's', 'r', 't'}:
@@ -249,12 +283,14 @@ def is_real_word(word, debug=False):
                 return True
             if debug:
                 print('trying stem %s for word %s' % (stem, word))
-            
- 
+
     return False
 
+
 def real_word_ratio_filter(cutoff):
-    return functools.partial(real_word_ratio, **{'cutoff': cutoff})
+    f = functools.partial(real_word_ratio, **{'cutoff': cutoff})
+    f.__doc__ = "filtering real-word-ratio with cutoff %0.2f" % cutoff
+    return f
 
 
 def emoticons(text):

@@ -150,7 +150,8 @@ colin_words = [
 'whistle 2',
 'ion 2',
 'braves 1',
-'soaked 1'
+'soaked 1',
+'google 2'
 ]
 
 internet_syllables = [

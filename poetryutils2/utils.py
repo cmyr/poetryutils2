@@ -80,12 +80,12 @@ def lines_from_file(filepath):
     lines = None
     with open(filepath) as f:
         lines = f.read().splitlines()
-        lines = [unicode(l) for l in lines]
+        lines = [unicode(l.decode('utf8')) for l in lines]
     return lines
 
 
 def debug_lines():
-    return lines_from_file('tests/100k.txt')
+    return lines_from_file('tests/100k.tst')
 
 
 def main():
