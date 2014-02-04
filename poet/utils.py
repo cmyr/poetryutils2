@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 import re
+import os
 
 
 # helpers etc
@@ -65,7 +66,11 @@ def wordlist():
     # if not hasattr(wordlist, "words"):
     import nltk
     words = set([w.lower() for w in nltk.corpus.words.words()])
-    with open('words.txt') as f:
+    filepath = os.path.dirname(os.path.realpath(__file__))
+    print(filepath)
+    filepath = os.path.join(filepath, 'words.txt')
+    print(filepath)
+    with open(filepath) as f:
         words.update(set(f.read().splitlines()))
 
     return words
@@ -75,7 +80,7 @@ def lines_from_file(filepath):
     lines = None
     with open(filepath) as f:
         lines = f.read().splitlines()
-
+        lines = [unicode(l) for l in lines]
     return lines
 
 

@@ -148,7 +148,9 @@ colin_words = [
 'facetime 2',
 'science 2',
 'whistle 2',
-'ion 2'
+'ion 2',
+'braves 1',
+'soaked 1'
 ]
 
 internet_syllables = [

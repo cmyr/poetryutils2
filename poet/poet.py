@@ -12,13 +12,13 @@ def get_lines(source, filters, line_key=None):
         if isinstance(item, basestring):
             line = unicode(item.decode('utf-8'))
         else:
-            if not line_attr:
+            if not line_key:
                 print('non-string sources require a line_key')
                 return
             line = item[line_key]
 
         if filter_line(line, filters):
-            yield line
+            yield item
 
 
 def filter_line(line, filters):
@@ -103,7 +103,7 @@ def main():
             print(l.rstrip())
     finally:
         pass
-        # i'm not entirely sure how to close() the files? trapped in chain :O
+        # i'm not entirely sure how to close() our input, files trapped in chain -_-`
 
 
 if __name__ == "__main__":
