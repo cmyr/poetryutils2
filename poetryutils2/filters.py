@@ -86,8 +86,11 @@ def blacklist_filter(blacklist):
 
 def low_letter_ratio(text, cutoff=0.8):
     t = re.sub(r'[^a-zA-Z ]', '', text)
-    if (float(len(t)) / len(text)) < cutoff:
-        return True
+    try:
+        if (float(len(t)) / len(text)) < cutoff:
+            return True
+    except ZeroDivisionError:
+        pass
     return False
 
 
@@ -200,7 +203,7 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
 STEMMER = Stemmer.Stemmer('english')
 
 
-def is_real_word(word):
+def is_real_word(word, debug=False):
     assert isinstance(word, unicode), 'word "%s" not unicode' % word
     if not hasattr(is_real_word, "words"):
         is_real_word.words = utils.wordlist()
@@ -244,8 +247,8 @@ def is_real_word(word):
             result = is_real_word(stem)
             if result:
                 return True
-
-            print('trying stem %s for word %s' % (stem, word))
+            if debug:
+                print('trying stem %s for word %s' % (stem, word))
             
  
     return False
