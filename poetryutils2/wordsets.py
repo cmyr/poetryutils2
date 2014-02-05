@@ -1,3 +1,4 @@
+# coding: utf-8
 swears = """
 shit
 fuck
@@ -22,3 +23,9 @@ gay
 """
 
 swears = set([x for x in swears.splitlines() if len(x)])
+
+
+custom_ipa = """
+eg ˈɛɡ
+thx θˈæŋks
+"""

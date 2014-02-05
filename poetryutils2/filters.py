@@ -5,8 +5,6 @@ import re
 import functools
 import random
 
-import Stemmer
-
 import utils
 import syllables
 import rhyme
@@ -216,7 +214,7 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
     if not len(sentance_words):
         return 0
 
-    are_words = [w for w in sentance_words if is_real_word(w)]
+    are_words = [w for w in sentance_words if utils.is_real_word(w)]
     # debuging:
     # not_words = set(sentance_words).difference(set(are_words))
 
@@ -235,57 +233,6 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
     return ratio
 
 
-STEMMER = Stemmer.Stemmer('english')
-
-
-def is_real_word(word, debug=False):
-    assert isinstance(word, unicode), 'word "%s" not unicode' % word
-    if not hasattr(is_real_word, "words"):
-        is_real_word.words = utils.wordlist()
-        print('loaded %d words' % len(is_real_word.words))
-
-    if word in is_real_word.words:
-        return True
-
-  # now this is a bunch of stemming handlers for plurals and tenses etc.
-    if word[-1] == 's':
-        # cheap handling of plurals not in our dict
-        return is_real_word(word[:-1])
-    elif word[-1] in {'g', 'd', 's', 'r', 't'}:
-        # cheap handling of gerunds not in our dict.
-        # this won't do great for nouns ending in e
-        # print('degerunding: %s' % word)
-        # if re.search(r'ing$', word):
-        #     word = word[:-3]
-        #     print('trying %s' % word)
-        #     if is_real_word(word):
-        #         print('success')
-        #         return True
-        #     else:
-        #         word = word + 'e'
-        #         print('trying %s' % word)
-        #         if is_real_word(word):
-        #             print('success')
-        #             return True
-        stem = STEMMER.stemWord(word)
-        if stem != word:
-            result = is_real_word(stem)
-            if result:
-                return True
-
-            if stem[-1] == 'i':
-                # sacrificing 'skiing' for the common good
-                stem = stem[:-1] + 'y'
-                return is_real_word(stem)
-
-            stem += 'e'
-            result = is_real_word(stem)
-            if result:
-                return True
-            if debug:
-                print('trying stem %s for word %s' % (stem, word))
-
-    return False
 
 
 def real_word_ratio_filter(cutoff):

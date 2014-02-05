@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import re
 import os
+import Stemmer
 
 
 # helpers etc
@@ -74,6 +75,58 @@ def wordlist():
         words.update(set(f.read().splitlines()))
 
     return words
+
+
+STEMMER = Stemmer.Stemmer('english')
+
+def is_real_word(word, debug=False):
+    assert isinstance(word, unicode), 'word "%s" not unicode' % word
+    if not hasattr(is_real_word, "words"):
+        is_real_word.words = wordlist()
+        print('loaded %d words' % len(is_real_word.words))
+
+    if word in is_real_word.words:
+        return True
+
+  # now this is a bunch of stemming handlers for plurals and tenses etc.
+    if word[-1] == 's':
+        # cheap handling of plurals not in our dict
+        return is_real_word(word[:-1])
+    elif word[-1] in {'g', 'd', 's', 'r', 't'}:
+        # cheap handling of gerunds not in our dict.
+        # this won't do great for nouns ending in e
+        # print('degerunding: %s' % word)
+        # if re.search(r'ing$', word):
+        #     word = word[:-3]
+        #     print('trying %s' % word)
+        #     if is_real_word(word):
+        #         print('success')
+        #         return True
+        #     else:
+        #         word = word + 'e'
+        #         print('trying %s' % word)
+        #         if is_real_word(word):
+        #             print('success')
+        #             return True
+        stem = STEMMER.stemWord(word)
+        if stem != word:
+            result = is_real_word(stem)
+            if result:
+                return True
+
+            if stem[-1] == 'i':
+                # sacrificing 'skiing' for the common good
+                stem = stem[:-1] + 'y'
+                return is_real_word(stem)
+
+            stem += 'e'
+            result = is_real_word(stem)
+            if result:
+                return True
+            if debug:
+                print('trying stem %s for word %s' % (stem, word))
+
+    return False
 
 
 def lines_from_file(filepath):
