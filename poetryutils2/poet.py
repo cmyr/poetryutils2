@@ -10,7 +10,10 @@ import filters
 def get_lines(source, filters, line_key=None):
     for item in source:
         if isinstance(item, basestring):
-            line = unicode(item.decode('utf-8'))
+            if isinstance(item, str):
+                line = item.decode('utf-8')
+            else:
+                line = item
         else:
             if not line_key:
                 print('non-string sources require a line_key')
@@ -55,6 +58,8 @@ def main():
                         help='filter out tweets with low letter ratio')
     parser.add_argument('-R', '--real-word-ratio', type=float,
                         help='filter out tweets with low real-word ratio')
+    parser.add_argument('--rhyme', type=str,
+                        help='filter to lines that rhyme with input')
     parser.add_argument('-l', '--line-length', type=str,
                         help='allowed line lengths')
     parser.add_argument('-s', '--syllable-count', type=str,
@@ -79,7 +84,7 @@ def main():
         print('blacklist: %s' % repr(blacklist))
         poet_filters.append(filters.blacklist_filter(blacklist))
     if args.ascii_filter:
-        poet_filters.append(filters.tricky_char_filter)
+        poet_filters.append(filters.ascii_filter)
     if args.numeral_filter:
         poet_filters.append(filters.numeral_filter)
     if args.letter_ratio:
@@ -92,6 +97,9 @@ def main():
 
     if args.syllable_count:
         poet_filters.append(filters.syllable_count_filter(args.syllable_count))
+
+    if args.rhyme:
+        poet_filters.append(filters.rhyme_filter(args.rhyme))
 
 
     # print(args.src)

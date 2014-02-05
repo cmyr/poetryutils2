@@ -9,6 +9,7 @@ import Stemmer
 
 import utils
 import syllables
+import rhyme
 import wordsets
 
 
@@ -291,6 +292,19 @@ def real_word_ratio_filter(cutoff):
     f = functools.partial(real_word_ratio, **{'cutoff': cutoff})
     f.__doc__ = "filtering real-word-ratio with cutoff %0.2f" % cutoff
     return f
+
+
+def rhymes_with_word(text, word):
+    rhyme_word = rhyme.rhyme_word(text)
+    if oldrhyme.rhyme_check(rhyme_word, word):
+        return False
+    return True
+
+def rhyme_filter(word):
+    f = functools.partial(rhymes_with_word, **{'word': word})
+    f.__doc__ = "filtering for rhymes with %s" % word
+    return f
+
 
 
 def emoticons(text):

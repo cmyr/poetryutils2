@@ -41,6 +41,34 @@ def load_phoneme_index():
 # rhyme_index = {}
 # wordlist = set(phoneme_index.keys())
 
+
+def rhyme_word(line):
+    """finds the last word of a sentance,
+     but in special cases will modify
+    it to help our pronounciation engine. """
+    word = _get_last_word(line)
+    if not word:
+        return None
+
+    word = re.sub(r'^thx$', 'thanks', word)
+    word = re.sub(r'uhh+$', 'uh', word)
+    word = re.sub(r'(n|s|y|h)oo+$', lambda m: '%so' % m.group(1), word)
+
+    return word
+
+
+def _get_last_word(sentance):
+    
+    sentance = sentance.split()
+    while len(sentance):
+        word = sentance.pop()
+        word = ''.join([w for w in word if w.isalpha()])
+        if word:
+            # if is_camel(word):
+            #     return de_camel(word).split().pop()
+            return word.lower()
+
+
 ipa_vowels = ['a','e','i','o','u','y','ɑ','ɛ','ɪ','ɩ','ɔ','ɚ','ɷ','ʊ','ʌ','œ','ø','ə','æ','ö']
 
 def get_phonemes(word):
@@ -112,12 +140,12 @@ def end_sound(phonemes):
     endsound = re.findall(pattern, phonemes, re.UNICODE)
     
     if len(endsound) == 0:
-        print("NO END SOUND?", phonemes)
+        # print("NO END SOUND?", phonemes)
         return
     try:
         return endsound[0]
     except IndexError:
-        print("INDEX ERROR?", phonemes, endsound)
+        # print("INDEX ERROR?", phonemes, endsound)
         raise
 
 
@@ -185,10 +213,14 @@ def add_new_words(words):
     
 
 def rhyme_check(word1, word2, debug=False):
-    p1 = get_phonemes(word1)
-    p2 = get_phonemes(word2)
+    if not hasattr(rhyme_check, 'cache'):
+        rhyme_check.cache = dict()
 
-    if (end_sound(p1) == end_sound(p2)
+
+    e1 = rhyme_check.cache.get(word1) or end_sound(get_phonemes(word1))
+    e2 = rhyme_check.cache.get(word2) or end_sound(get_phonemes(word2))
+
+    if (e1 == e2
         and not words_are_homonymy(word1, word2)):
         return True
 
