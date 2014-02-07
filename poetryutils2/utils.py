@@ -4,7 +4,7 @@ import re
 import os
 import Stemmer
 
-
+MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
 # helpers etc
 
 def _strip_string(text):
@@ -67,10 +67,7 @@ def wordlist():
     # if not hasattr(wordlist, "words"):
     import nltk
     words = set([w.lower() for w in nltk.corpus.words.words()])
-    filepath = os.path.dirname(os.path.realpath(__file__))
-    print(filepath)
-    filepath = os.path.join(filepath, 'words.txt')
-    print(filepath)
+    filepath = os.path.join(MODULE_PATH, 'words.txt')
     with open(filepath) as f:
         words.update(set(f.read().splitlines()))
 
@@ -138,7 +135,8 @@ def lines_from_file(filepath):
 
 
 def debug_lines():
-    return lines_from_file('tests/100k.tst')
+    filepath = os.path.join(MODULE_PATH, os.path.pardir, 'tests/100k.tst')
+    return lines_from_file(filepath)
 
 
 def main():

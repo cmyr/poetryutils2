@@ -5,9 +5,10 @@ poetry utilities
 from __future__ import print_function
 from __future__ import unicode_literals
 import filters
+import rhyme
 
 
-def get_lines(source, filters, line_key=None):
+def line_iter(source, filters, line_key=None):
     for item in source:
         if isinstance(item, basestring):
             if isinstance(item, str):
@@ -23,6 +24,8 @@ def get_lines(source, filters, line_key=None):
         if filter_line(line, filters):
             yield item
 
+def lines(source, filters, line_key=None):
+    return [l for l in line_iter(source, filters, line_key)]
 
 def filter_line(line, filters):
     for f in filters:
@@ -33,7 +36,7 @@ def filter_line(line, filters):
 
 
 
-def get_line_iter(filepaths):
+def _get_line_iter(filepaths):
     """chain together input files if necessary"""
     if len(filepaths) == 1:
         return open(filepaths[0])
@@ -105,11 +108,12 @@ def main():
     # print(args.src)
     # return
     # paths = args.src
-    source = get_line_iter(args.src)
+    source = _get_line_iter(args.src)
     try:
-        for l in get_lines(source, poet_filters):
+        for l in line_iter(source, poet_filters):
             print(l.rstrip())
     finally:
+        rhyme.close_db()
         pass
         # i'm not entirely sure how to close() our input, files trapped in chain -_-`
 
