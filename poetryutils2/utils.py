@@ -26,6 +26,10 @@ HASHTAG_SUB2 = re.compile(r'([a-z0-9])([A-Z])')
 
 
 def fix_hashtags(text):
+    if not isinstance(text, basestring):
+        print(text)
+        return False
+        
     hashtags = HASHTAG_RE.findall(text)
     for h in hashtags:
         fix = HASHTAG_SUB1.sub(r'\1 \2', h)
@@ -66,10 +70,11 @@ def synonyms(word):
 def wordlist():
     # if not hasattr(wordlist, "words"):
     import nltk
-    words = set([w.lower() for w in nltk.corpus.words.words()])
+    words = set([w.lower().decode('utf8') for w in nltk.corpus.words.words()])
     filepath = os.path.join(MODULE_PATH, 'words.txt')
     with open(filepath) as f:
-        words.update(set(f.read().splitlines()))
+        more_words = [l.decode('utf8') for l in f.read().splitlines()]
+        words.update(set(more_words))
 
     return words
 

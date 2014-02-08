@@ -225,7 +225,8 @@ internet_syllables = [
 'gd 2',
 'xo 2',
 'xox 3',
-'abc 3'
+'abc 3',
+'gtf 3'
 ]
 
 letters_are_words_too = [

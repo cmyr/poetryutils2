@@ -15,7 +15,7 @@ from collections import defaultdict
 from mpycache import LRUCache
 
 import utils
-
+import wordsets
 
 # PHONEME_INDEX_PICKLE_PATH = os.path.join(utils.MODULE_PATH, "data/phonemes.p")
 # phoneme_index = None
@@ -94,7 +94,7 @@ def rhyme_word(text, debug=False):
     if not word or not len(word):
         return None
 
-    return normalize_word(word)
+    return _normalize_word(word)
 
 
 def _normalize_word(word):
@@ -163,23 +163,51 @@ def _adjust_phonemes(phonemes):
 
 
 def _end_sound(phonemes):
-    if not phonemes:
+    if not phonemes or not len(phonemes):
         raise ValueError('phonemes cannot be None')
-    sound = ""
+
     p = list(phonemes)
+    sound = p.pop()
+    if sound[0] in ipa_vowels:
+        brake = False
+        while True:
+            try:
+                l = p.pop()
+            except IndexError:
+                break
+            if l in ipa_vowels and brake == True:
+                break
+            elif l not in ipa_vowels:
+                brake = True
+            sound = l + sound
+
+        # handle sounds that end w/ vowels
+    else:
+        # sounds that end in consonants
+        brake = False
+        while True:
+            try:
+                l = p.pop()
+            except IndexError:
+                break
+            if l not in ipa_vowels and brake == True:
+                break
+            elif l in ipa_vowels:
+                brake = True
+            sound = l + sound
 
     # last syllable minus initial consonants.
-    brake = False
-    while True:
-        try:
-            l = p.pop()
-        except IndexError:
-            break
-        if l not in ipa_vowels and brake == True:
-            break
-        elif l in ipa_vowels:
-            brake = True
-        sound = l + sound
+    # brake = False
+    # while True:
+    #     try:
+    #         l = p.pop()
+    #     except IndexError:
+    #         break
+    #     if l not in ipa_vowels and brake == True:
+    #         break
+    #     elif l in ipa_vowels:
+    #         brake = True
+    #     sound = l + sound
 
     return sound
 
@@ -207,15 +235,42 @@ def _extract_phonemes(word):
 
 
 def words_are_homophony(w1, w2):
+    phoneme1 = get_phonemes(w1)
+    phoneme2 = get_phonemes(w2)
+
+    if _RHYME_DEBUG:
+        print(type(phoneme1), type(phoneme2))
+        print(phoneme1, phoneme2)
+
+    # phoneme1 = re.sub(ur'[ˈˌ]', '', phoneme1, re.UNICODE)
+    # phoneme2 = re.sub(ur'[ˈˌ]', '', phoneme2, re.UNICODE)
+
+    if _RHYME_DEBUG:
+        print(phoneme1, phoneme2)
+
+    if phoneme1 == phoneme2:
+        return True
+
+    shorter = phoneme1 if (len(phoneme1) < len(phoneme2)) else phoneme2
+    longer = phoneme1 if shorter == phoneme2 else phoneme2
+
+    # if the shorter word begins with a consonant we return True
+    # if the longer word contains all the shorter's phonemes
+    if shorter[0] not in ipa_vowels:
+        if longer[-len(shorter):] == shorter:
+            return True
+
     return False
 
 
 def words_rhyme(w1, w2):
+    open_db()
     w1 = _normalize_word(w1)
     w2 = _normalize_word(w2)
 
     p1 = get_phonemes(w1)
     p2 = get_phonemes(w2)
+    close_db()
     if _end_sound(p1) == _end_sound(p2):
         if not words_are_homophony(w1, w2):
             return True
@@ -250,7 +305,8 @@ def rhymes_for_lines(lines, textkey=None):
     """ 
     takes an iterable containing lines of text
     returns them grouped by rhyme
-    """
+    returns a list of lists of homophones
+        """
 
     open_db()
     organized_rhyme = defaultdict(list)
@@ -314,13 +370,34 @@ def add_new_words(wordlist):
     print('finished in %0.2f' % (time.time() - start))
     close_db()
 
+
+def UPDATE_PHONEME_LIST(phonemes=wordsets.custom_ipa):
+    """
+    a utility function for manually updating our phoneme list.
+    phonemes should be a list of (word, ipa) tuples.
+    """
+    open_db()
+    for w, p in phonemes:
+        db[w.encode('utf8')] = p.encode('utf8')
+    close_db
+
+
+
+
 def main():
+    pass
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('arg1', type=str, help="required argument")
-    parser.add_argument('arg2', '--argument-2',
-                        help='optional boolean argument', action="store_true")
+    # parser.add_argument('arg1', type=str, help="required argument")
+    parser.add_argument('--update',
+                        help='update phoneme list', action="store_true")
+
     args = parser.parse_args()
+
+    if args.update:
+        UPDATE_PHONEME_LIST()
+
+    
 
 
 if __name__ == "__main__":

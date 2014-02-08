@@ -243,7 +243,7 @@ def real_word_ratio_filter(cutoff):
 
 def rhymes_with_word(text, word):
     rhyme_word = rhyme.rhyme_word(text)
-    if oldrhyme.rhyme_check(rhyme_word, word):
+    if rhyme.word_rhyme(rhyme_word, word):
         return False
     return True
 

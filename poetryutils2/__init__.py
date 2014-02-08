@@ -1,3 +1,3 @@
 
 from syllables import count_syllables
-from poet import get_lines, filter_line
+from poet import line_iter, filter_line
