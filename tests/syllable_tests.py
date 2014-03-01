@@ -320,6 +320,31 @@ wiggle 2
 awkward 2
 turtle 2
 earned 1
+eyeing 2
+fantastic 3
+players 2
+joyce 1
+reaction 3
+would've 2
+create 2
+hustle 2
+young 1
+staying 2
+doctors 2
+bc 2
+swag 1
+something 2
+somebody 3
+love 1
+enjoying 3
+reaction 3
+hustle 2
+muscle 2
+success 2
+enjoying 3
+should've 2
+mfs 2
+aren't 1
 """
 
 

@@ -161,7 +161,20 @@ colin_words = [
 'wiggle 2',
 'turtle 2',
 'earned 1',
-'called 1'
+'called 1',
+'shouldve 2',
+'muscle 2',
+'hustle 2',
+'reaction 3',
+'enjoying 3',
+'somebody 3',
+'staying 2',
+'players 2',
+'create 2',
+'wouldve 2',
+'eyeing 2',
+'arent 1'
+
 ]
 
 internet_syllables = [
@@ -226,7 +239,8 @@ internet_syllables = [
 'xo 2',
 'xox 3',
 'abc 3',
-'gtf 3'
+'gtf 3',
+'mfs 1'
 ]
 
 letters_are_words_too = [

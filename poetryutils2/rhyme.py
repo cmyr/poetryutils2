@@ -341,6 +341,8 @@ def _sort_rhymes(rhymes):
     for line, phonemes in rhymes:
         sorted_rhymes[phonemes].append(line)
 
+    # TODO: now check keys for homophonity
+    
     return sorted_rhymes.values()
 
 

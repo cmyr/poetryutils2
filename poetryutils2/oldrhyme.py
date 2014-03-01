@@ -262,8 +262,7 @@ def center_rhymes(word):
     print('center rhymes for sound %s from word %s' % (sound, word))
 
     source_words = [x for x,y in modified_phonemes if x in wordlist]
-    results = [x for x in source_words if center_sound(x) == sound]
-    results = [x for x in results if not words_are_homonymy(x, word)]
+    results = [x for x in source_words if center_sound(x) == sound] results = [x for x in results if not words_are_homonymy(x, word)]
     return results
 
 # testing and debug stuff:
