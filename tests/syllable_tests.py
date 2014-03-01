@@ -320,6 +320,10 @@ wiggle 2
 awkward 2
 turtle 2
 earned 1
+lion 2
+hehe 2
+title 2
+orange 1
 """
 
 
