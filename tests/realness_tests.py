@@ -32,8 +32,20 @@ def realness(sample):
     return fails
 
 def main():
-    print(len(sample_words()))
+    # print(len(sample_words()))
+    sample = sample_words()
+    print(len(sample))
 
+    fails = realness(sample)
+    # for f in fails:
+    #     print(f)
+
+    from collections import Counter
+    counter = Counter(fails)
+
+    for word, count in counter.most_common():
+        if count > 1:
+            print(word, count)
     # import argparse
     # parser = argparse.ArgumentParser()
     # parser.add_argument('arg1', type=str, help="required argument")

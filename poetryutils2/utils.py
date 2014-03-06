@@ -81,6 +81,23 @@ def wordlist():
 
 STEMMER = Stemmer.Stemmer('english')
 
+# So this is kind of messy, and doesn't work very well right now.
+# Basically: I want to do 'realness checking' to figure out
+# whether a word is a real word or not. This doesn't work using just a look-up,
+# because gerunds and plurals etcetera frequently aren't on wordlists.
+# I was trying to use a stemmer, but then the *stems* are often
+# not real words, either. 
+
+# possible solutions: 
+#     - some sort of custom stemmer?
+#     - some sort of thing that converts stems back into words
+#     - using some sort of spell-checking API
+#     - getting a better wordlist?
+#     - etcetera.
+
+#     I'm not sure where to go with this, right now.
+
+
 def is_real_word(word, debug=False):
     assert isinstance(word, unicode), 'word "%s" not unicode' % word
     if not hasattr(is_real_word, "words"):
