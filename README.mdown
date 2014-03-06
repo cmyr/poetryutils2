@@ -1,1 +1,16 @@
-A set of utilties and tools to help with procedural writing.
+poetryutils: tools for poetry-focused textual analysis and manipulation.
+
+basically small tools related to rhyme and metre, including a rhyme-finder I'm personally pretty happy about, at this juncture.
+
+this is very very much in progress, and not intended for 'release'. It's a set of little functions I've been using in my own work, which has mostly focused on text from twitter. These tools may not be a very good solution to other corpora.
+
+syllable counting stuff taken from a script by alex.rudnick that I found on the nltk listserv.
+
+my approach to rhymes (essentially the idea of offloading my phoneme-gathering to espeak) is from a script by Imri Goldberg.
+
+
+to use this for rhyme finding:
+
+ - you must have espeak installed (espeak.sourceforge.net/‎)
+ - you need to set a list of words you would like to be searching, with set_word_list(), which will have there phonemes extracted; this can take a while, like several hours for 200k words (these are cached, so you won't have to do it repeatedly)
+ -get_rhyme_words(w) will then return words in the  list that rhyme with w.
