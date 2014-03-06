@@ -173,7 +173,8 @@ colin_words = [
 'create 2',
 'wouldve 2',
 'eyeing 2',
-'arent 1'
+'arent 1',
+'anyone 3'
 
 ]
 
@@ -240,7 +241,7 @@ internet_syllables = [
 'xox 3',
 'abc 3',
 'gtf 3',
-'mfs 1'
+'mfs 2'
 ]
 
 letters_are_words_too = [

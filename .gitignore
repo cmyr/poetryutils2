@@ -3,3 +3,4 @@
 *.pyc
 planning*
 poetryutils2/data/
+bin/*.txt
