@@ -2,8 +2,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import re
 import os
+import Stemmer
 
-
+MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
 # helpers etc
 
 def _strip_string(text):
@@ -25,6 +26,10 @@ HASHTAG_SUB2 = re.compile(r'([a-z0-9])([A-Z])')
 
 
 def fix_hashtags(text):
+    if not isinstance(text, basestring):
+        print(text)
+        return False
+        
     hashtags = HASHTAG_RE.findall(text)
     for h in hashtags:
         fix = HASHTAG_SUB1.sub(r'\1 \2', h)
@@ -65,15 +70,82 @@ def synonyms(word):
 def wordlist():
     # if not hasattr(wordlist, "words"):
     import nltk
-    words = set([w.lower() for w in nltk.corpus.words.words()])
-    filepath = os.path.dirname(os.path.realpath(__file__))
-    print(filepath)
-    filepath = os.path.join(filepath, 'words.txt')
-    print(filepath)
+    words = set([w.lower().decode('utf8') for w in nltk.corpus.words.words()])
+    filepath = os.path.join(MODULE_PATH, 'words.txt')
     with open(filepath) as f:
-        words.update(set(f.read().splitlines()))
+        more_words = [l.decode('utf8') for l in f.read().splitlines()]
+        words.update(set(more_words))
 
     return words
+
+
+STEMMER = Stemmer.Stemmer('english')
+
+# So this is kind of messy, and doesn't work very well right now.
+# Basically: I want to do 'realness checking' to figure out
+# whether a word is a real word or not. This doesn't work using just a look-up,
+# because gerunds and plurals etcetera frequently aren't on wordlists.
+# I was trying to use a stemmer, but then the *stems* are often
+# not real words, either. 
+
+# possible solutions: 
+#     - some sort of custom stemmer?
+#     - some sort of thing that converts stems back into words
+#     - using some sort of spell-checking API
+#     - getting a better wordlist?
+#     - etcetera.
+
+#     I'm not sure where to go with this, right now.
+
+
+def is_real_word(word, debug=False):
+    assert isinstance(word, unicode), 'word "%s" not unicode' % word
+    if not hasattr(is_real_word, "words"):
+        is_real_word.words = wordlist()
+        print('loaded %d words' % len(is_real_word.words))
+
+    if word in is_real_word.words:
+        return True
+
+  # now this is a bunch of stemming handlers for plurals and tenses etc.
+    if word[-1] == 's':
+        # cheap handling of plurals not in our dict
+        return is_real_word(word[:-1])
+    elif word[-1] in {'g', 'd', 's', 'r', 't'}:
+        # cheap handling of gerunds not in our dict.
+        # this won't do great for nouns ending in e
+        # print('degerunding: %s' % word)
+        # if re.search(r'ing$', word):
+        #     word = word[:-3]
+        #     print('trying %s' % word)
+        #     if is_real_word(word):
+        #         print('success')
+        #         return True
+        #     else:
+        #         word = word + 'e'
+        #         print('trying %s' % word)
+        #         if is_real_word(word):
+        #             print('success')
+        #             return True
+        stem = STEMMER.stemWord(word)
+        if stem != word:
+            result = is_real_word(stem)
+            if result:
+                return True
+
+            if stem[-1] == 'i':
+                # sacrificing 'skiing' for the common good
+                stem = stem[:-1] + 'y'
+                return is_real_word(stem)
+
+            stem += 'e'
+            result = is_real_word(stem)
+            if result:
+                return True
+            if debug:
+                print('trying stem %s for word %s' % (stem, word))
+
+    return False
 
 
 def lines_from_file(filepath):
@@ -85,7 +157,8 @@ def lines_from_file(filepath):
 
 
 def debug_lines():
-    return lines_from_file('tests/100k.tst')
+    filepath = os.path.join(MODULE_PATH, os.path.pardir, 'tests/100k.tst')
+    return lines_from_file(filepath)
 
 
 def main():

@@ -5,12 +5,16 @@ poetry utilities
 from __future__ import print_function
 from __future__ import unicode_literals
 import filters
+import rhyme
 
 
-def get_lines(source, filters, line_key=None):
+def line_iter(source, filters, line_key=None):
     for item in source:
         if isinstance(item, basestring):
-            line = unicode(item.decode('utf-8'))
+            if isinstance(item, str):
+                line = item.decode('utf-8')
+            else:
+                line = item
         else:
             if not line_key:
                 print('non-string sources require a line_key')
@@ -20,6 +24,8 @@ def get_lines(source, filters, line_key=None):
         if filter_line(line, filters):
             yield item
 
+def lines(source, filters, line_key=None):
+    return [l for l in line_iter(source, filters, line_key)]
 
 def filter_line(line, filters):
     for f in filters:
@@ -30,7 +36,7 @@ def filter_line(line, filters):
 
 
 
-def get_line_iter(filepaths):
+def _get_line_iter(filepaths):
     """chain together input files if necessary"""
     if len(filepaths) == 1:
         return open(filepaths[0])
@@ -55,6 +61,8 @@ def main():
                         help='filter out tweets with low letter ratio')
     parser.add_argument('-R', '--real-word-ratio', type=float,
                         help='filter out tweets with low real-word ratio')
+    parser.add_argument('--rhyme', type=str,
+                        help='filter to lines that rhyme with input')
     parser.add_argument('-l', '--line-length', type=str,
                         help='allowed line lengths')
     parser.add_argument('-s', '--syllable-count', type=str,
@@ -79,7 +87,7 @@ def main():
         print('blacklist: %s' % repr(blacklist))
         poet_filters.append(filters.blacklist_filter(blacklist))
     if args.ascii_filter:
-        poet_filters.append(filters.tricky_char_filter)
+        poet_filters.append(filters.ascii_filter)
     if args.numeral_filter:
         poet_filters.append(filters.numeral_filter)
     if args.letter_ratio:
@@ -93,15 +101,19 @@ def main():
     if args.syllable_count:
         poet_filters.append(filters.syllable_count_filter(args.syllable_count))
 
+    if args.rhyme:
+        poet_filters.append(filters.rhyme_filter(args.rhyme))
+
 
     # print(args.src)
     # return
     # paths = args.src
-    source = get_line_iter(args.src)
+    source = _get_line_iter(args.src)
     try:
-        for l in get_lines(source, poet_filters):
+        for l in line_iter(source, poet_filters):
             print(l.rstrip())
     finally:
+        rhyme.close_db()
         pass
         # i'm not entirely sure how to close() our input, files trapped in chain -_-`
 
