@@ -70,6 +70,10 @@ def open_db():
 
 
 def close_db():
+    global db
+    if not db:
+        return
+        
     if stats['new'] > 0:
         print('added %d new words to phoneme index' % stats['new'])
     db.close()

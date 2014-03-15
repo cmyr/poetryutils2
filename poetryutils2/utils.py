@@ -108,25 +108,36 @@ def is_real_word(word, debug=False):
         return True
 
   # now this is a bunch of stemming handlers for plurals and tenses etc.
-    if word[-1] == 's':
-        # cheap handling of plurals not in our dict
-        return is_real_word(word[:-1])
-    elif word[-1] in {'g', 'd', 's', 'r', 't'}:
-        # cheap handling of gerunds not in our dict.
-        # this won't do great for nouns ending in e
-        # print('degerunding: %s' % word)
-        # if re.search(r'ing$', word):
-        #     word = word[:-3]
-        #     print('trying %s' % word)
-        #     if is_real_word(word):
-        #         print('success')
-        #         return True
-        #     else:
-        #         word = word + 'e'
-        #         print('trying %s' % word)
-        #         if is_real_word(word):
-        #             print('success')
-        #             return True
+   
+   # ------option 1 ------- #
+
+    # if word[-1] == 's':
+    #     # cheap handling of plurals not in our dict
+    #     return is_real_word(word[:-1])
+    # elif word[-1] in {'g', 'd', 's', 'r', 't'}:
+    #     # cheap handling of gerunds not in our dict.
+    #     # this won't do great for nouns ending in e
+    #     if debug:
+    #         print('degerunding: %s' % word)
+    #     if re.search(r'ing$', word):
+    #         word = word[:-3]
+    #         if debug:
+    #             print('trying %s' % word)
+    #         if is_real_word(word):
+    #             if debug:
+    #                 print('success')
+    #             return True
+    #         else:
+    #             word = word + 'e'
+    #             if debug:
+    #                 print('trying %s' % word)
+    #             if is_real_word(word):
+    #                 if debug:
+    #                     print('success')
+    #                 return True
+
+    # ------option 2 ------- #
+
         stem = STEMMER.stemWord(word)
         if stem != word:
             result = is_real_word(stem)
@@ -145,6 +156,8 @@ def is_real_word(word, debug=False):
             if debug:
                 print('trying stem %s for word %s' % (stem, word))
 
+
+    # don't comment me
     return False
 
 
@@ -160,6 +173,36 @@ def debug_lines():
     filepath = os.path.join(MODULE_PATH, os.path.pardir, 'tests/100k.tst')
     return lines_from_file(filepath)
 
+# these, at some point, might want to be in another file:
+
+
+def line_iter(source, filters, line_key=None):
+
+    for item in source:
+        if isinstance(item, basestring):
+            if isinstance(item, str):
+                line = item.decode('utf-8')
+            else:
+                line = item
+        else:
+            if not line_key:
+                print('non-string sources require a line_key')
+                return
+            line = item[line_key]
+
+        if filter_line(line, filters):
+            yield item
+
+
+def lines(source, filters, line_key=None):
+    return [l for l in line_iter(source, filters, line_key)]
+
+def filter_line(line, filters):
+    for f in filters:
+        if f(line):
+            return False
+
+    return True
 
 def main():
     pass

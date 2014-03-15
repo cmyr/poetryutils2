@@ -5,10 +5,10 @@ import re
 import functools
 import random
 
-import utils
-import syllables
-import rhyme
-import wordsets
+from . import utils
+from . import syllables
+from . import rhyme
+from . import wordsets
 
 
 """
@@ -51,6 +51,11 @@ def numeral_filter(text):
 
     return False
 
+def title_case_filter(text):
+    if not text.istitle():
+        return True
+
+    return False
 
 # def tricky_characters(text, debug=False):
 #     """
@@ -265,8 +270,8 @@ def _convert_custom_regex(in_re):
     takes a string in our custom regex format
     and converts it to acceptable regex 
     """
-    regex = re.sub(r'(?:[^\\]~|\A~)([a-zA-Z]*)',
-                   lambda m: '(%s)' % '|'.join(utils.synonyms(m.group(1))),
+    regex = re.sub(r'([^\\])(?:~)([a-zA-Z]*)',
+                   lambda m: '%s(%s)' % (m.group(1), '|'.join(utils.synonyms(m.group(2)))),
                    in_re)  # expand '~word' to a (list|of|synonyms)
 
     regex = re.sub(r'\\~', '~', regex)  # replace escaped tildes
