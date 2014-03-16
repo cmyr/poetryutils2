@@ -15,15 +15,6 @@ _DEBUG = True
 
 def make_art(source, filters):
     
-    # syllables = re.findall(r'[0-9]+', schema)
-    # syllables = set(i for i in syllables)
-    # syllable_range = ','.join(syllables)
-
-    # syllables = [int(i) for i in syllables]
-
-
-
-    # rhymes = defaultdict(list)
     lines = get_lines(source, filters)
     nines = relevant_lines(lines[9], 3)
     fives = relevant_lines(lines[5], 2)
@@ -64,8 +55,8 @@ def relevant_lines(lines, set_size):
     
 
 def rhyme_sets_for_rhymes(rhymes, set_size):
-    # input should be
-    # this is ugllly
+    # this is ugllly :-(
+
 
     # okay so we have a list of rhymes, sorted into homophones.
     # ie: r1,r1,r1,r1,r1,r2,r2,r2,r2,r3,r3,r4,r5,r6
