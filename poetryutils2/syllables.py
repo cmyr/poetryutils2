@@ -1,9 +1,14 @@
 import string
 import re
 import os
-from special_syllables import special_syllables
+# from . import special_syllables
 
 import utils
+from .special_syllables import special_syllables_en
+
+# special_syllables_en = special_syllables.special_syllables_en
+
+
 
 fallback_cache = dict()
 
@@ -32,7 +37,7 @@ def _normalize_word(word):
     return word.strip().lower()
 
 # Read our syllable override file and stash that info in the cache
-for line in special_syllables:
+for line in special_syllables_en:
     if line:
         toks = line.split()
         assert len(toks) == 2

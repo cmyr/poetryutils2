@@ -12,10 +12,10 @@ import time
 import multiprocessing
 
 from collections import defaultdict
-from mpycache import LRUCache
+from .mpycache import LRUCache
 
-import utils
-import wordsets
+from . import utils
+from . import wordsets
 
 # PHONEME_INDEX_PICKLE_PATH = os.path.join(utils.MODULE_PATH, "data/phonemes.p")
 # phoneme_index = None

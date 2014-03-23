@@ -300,7 +300,7 @@ weird_buggy_e_words = [
  ]
 
 
-special_syllables = (
+special_syllables_en = (
     special_syllables_orig + 
     internet_syllables +
     colin_words +
