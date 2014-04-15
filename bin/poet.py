@@ -58,10 +58,9 @@ def main(args=sys.argv):
         print('please specify a source file')
 
     if args.title_case_filter:
-        poet_filters.append(poetryutils2.filterstitle_case_filter)
+        poet_filters.append(poetryutils2.filters.title_case_filter)
     if args.line_length:
-        poet_filters.append(
-            poetryutils2.filtersline_length_filter(args.line_length))
+        poet_filters.append(poetryutils2.filters.line_length_filter(args.line_length))
     if args.blacklist:
         blacklist = args.blacklist.split(',')
         print('blacklist: %s' % repr(blacklist))
