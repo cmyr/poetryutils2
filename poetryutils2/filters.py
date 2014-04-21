@@ -57,6 +57,13 @@ def title_case_filter(text):
 
     return False
 
+def multi_line_filter(text):
+    """filters out text that contains non-trailing newlines"""
+    if len(text.splitlines()) > 1:
+        return True
+
+    return False
+    
 # def tricky_characters(text, debug=False):
 #     """
 #     treat as a bool, need to look up counting unicode chars
