@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import re
 import os
 import sys
-import gdbm
+import anydbm
 import cPickle as pickle
 import time
 import multiprocessing
@@ -66,7 +66,7 @@ phone_cache = LRUCache()
 def open_db():
     global db
     if not db:
-        db = gdbm.open(dbpath, 'cs')
+        db = anydbm.open(dbpath, 'cs')
         stats['new'] = 0
 
 
@@ -75,7 +75,7 @@ def close_db():
     if not db:
         return
         
-    if stats['new'] > 0:
+    if stats['new'] > 0 and _RHYME_DEBUG:
         print('added %d new words to phoneme index' % stats['new'])
     db.close()
     db = None
