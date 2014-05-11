@@ -23,8 +23,9 @@ class Rhymer(object):
             rhyme = self.endings.get(end_sound)
             if rhyme and poetryutils2.rhyme.lines_rhyme(line, rhyme):
 
-                print('\n', line, rhyme, sep='\n')
+                # print('\n', line, rhyme, sep='\n')
                 self.endings[end_sound] = None
+                return (line, rhyme)
             else:
                 self.endings[end_sound] = line
 
@@ -41,11 +42,19 @@ class Coupler(object):
 
     def add_line(self, line):
         syllable_count = poetryutils2.count_syllables(line)
-        self.rhymers[syllable_count].add_line(line)
+        return self.rhymers[syllable_count].add_line(line)
 
         
 # def coupler(input_iter):
 #     line_lengths = dict()
+
+def couplet_iter(source):
+    coupler = Coupler()
+    for line in source:
+        result = coupler.add_line(line)
+        if result:
+            yield result
+
 
     def debug(self):
         for k in self.rhymers:
@@ -68,12 +77,12 @@ def tests():
     definite_passes = [
     'one two four five',
     'you feel alive']
-    coupler = Coupler()
 
     lines = poetryutils2.utils.debug_lines()
     lines.extend(definite_passes)
-    for l in lines:
-        coupler.add_line(l)
+ 
+    for couplet in couplet_iter(lines):
+        print(couplet[0], '\n', couplet[1])
 
 
     # coupler.debug()
