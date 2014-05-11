@@ -90,6 +90,34 @@ def ascii_filter(text):
     return False
 
 # variable filters:
+def whitelist_check(text, whitelist, debug=False):
+    """filter text that contains a word on the whitelist"""
+    hits = 0
+    for word in (utils._strip_string(w) for w in text.split()):
+        if word in whitelist:
+            if debug:
+                print(word)
+            hits += 1
+            if hits == 1:
+                continue
+            # number of matches increases chances we'll approve
+            # basically 1 hit has a 1/3 chance, 3 hits is a sure thing
+            chance = random.randrange(0, 100)
+            if chance > (33 * hits):
+                return False
+
+    return True
+
+def whitelist_filter(whitelist):
+    f = functools.partial(whitelist_check, **{'whitelist': whitelist})
+    f.__doc__ = 'whitelist words: %s' % repr(whitelist)
+    return f
+
+def topic_syria_filter():
+    return whitelist_filter(wordsets.syria)
+
+def topic_ukraine_filter():
+    return whitelist_filter(wordsets.ukraine)
 
 
 def blacklist_check(text, blacklist, leakage=0):
