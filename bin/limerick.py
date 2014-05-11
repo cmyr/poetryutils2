@@ -17,7 +17,7 @@ def make_art(source, filters):
     
     lines = get_lines(source, filters)
     nines = relevant_lines(lines[9], 3)
-    fives = relevant_lines(lines[5], 2)
+    fives = relevant_lines(lines[6], 2)
 
     random.shuffle(nines)
     random.shuffle(fives)
@@ -33,7 +33,7 @@ def make_art(source, filters):
     return poems
 
 def get_lines(source, filters):
-    syllables = (5,9)
+    syllables = (6,9)
     lines = defaultdict(list)
 
     for line in poetryutils2.line_iter(source, filters):
@@ -135,7 +135,7 @@ TEST_FILTERS = [
 
 def main():
     if _DEBUG:
-        sourcepath = '/Users/cmyr/Documents/twitterpoems/chunk1.txt'
+        sourcepath = '/Users/cmyr/tweetdbm/may09.txt'
         # sourcepath = '/Users/cmyr/Dev/projects/poetryutils2/tests/100k.tst'
         # scheme='9a 9a 5b 5b 9a'
 

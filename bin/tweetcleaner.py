@@ -75,10 +75,10 @@ def main():
     db_path = args.dbpath
 
     filters = [
-    poetryutils2.filters.url_filter,
+    # poetryutils2.filters.url_filter,
     poetryutils2.filters.line_length_filter("0-80"),
-    poetryutils2.filters.real_word_ratio_filter(0.8),
-    poetryutils2.filters.hashtag_filter,
+    # poetryutils2.filters.real_word_ratio_filter(0.8),
+    # poetryutils2.filters.hashtag_filter,
     poetryutils2.filters.multi_line_filter
     ]
 
