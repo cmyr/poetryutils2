@@ -26,6 +26,17 @@ def example_limerick_iter():
                 limerick = list()
 
 
+def example_couplet_iter():
+    source = '/Users/cmyr/Dev/projects/poetryutils2/sources/maycouplets.txt'
+    with open(source) as f:
+        line_one = None
+        for line in f:
+            if len(line.rstrip()):
+                if line_one:
+                    yield(line_one, line)
+                    line_one = None
+                else:
+                    line_one = line
 
 def test_haiku():
     for poem in example_haiku_iter():
@@ -36,6 +47,12 @@ def test_limericks():
         print(poem)
 
 
+def test_couplets():
+    for poem in example_couplet_iter():
+        print(poem)
+
+
 if __name__ == "__main__":
-    test_haiku()
-    test_limericks()
+    # test_haiku()
+    # test_limericks()
+    test_couplets()
