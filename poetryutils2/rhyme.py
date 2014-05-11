@@ -22,7 +22,7 @@ from . import wordsets
 # modified_phonemes = None
 # wordlist = None
 # rhyme_table = None
-_RHYME_DEBUG = True
+_RHYME_DEBUG = False
 
 double_end_letters = set(['f', 'e', 'l', 'i', 'o', 's'])
 ipa_vowels = set("ˈˌaeiouyɑɛɪöɩɔɚɷʊʌœöøəæː")
@@ -65,8 +65,9 @@ phone_cache = LRUCache()
 
 def open_db():
     global db
-    db = anydbm.open(dbpath, 'cs')
-    stats['new'] = 0
+    if not db:
+        db = anydbm.open(dbpath, 'cs')
+        stats['new'] = 0
 
 
 def close_db():
@@ -77,6 +78,7 @@ def close_db():
     if stats['new'] > 0:
         print('added %d new words to phoneme index' % stats['new'])
     db.close()
+    db = None
 
 
 def rhyme_word(text, debug=False):
@@ -99,6 +101,22 @@ def rhyme_word(text, debug=False):
         return None
 
     return _normalize_word(word)
+
+
+def rhyme_word_if_appropriate(text):
+    """returns none if last word isn't a word"""
+    words = text.rstrip(' !.,?\"\'').split()
+    
+    if not len(words):
+        return None
+
+    last_word = words.pop()
+    if last_word[0] == "#":
+        last_word = last_word[1:]
+    if last_word.isalpha():
+        return last_word
+
+    return None
 
 
 def _normalize_word(word):
@@ -221,6 +239,7 @@ def sound_for_word(word, func=_end_sound):
     a sort of convenience function for getting a specific
     sound for a word, returning None on any errors
     """
+    open_db()
     try:
         w = _normalize_word(word)
         p = get_phonemes(w)
@@ -281,6 +300,8 @@ def words_rhyme(w1, w2):
 
     return False
 
+def lines_rhyme(l1, l2):
+    return words_rhyme(rhyme_word(l1), rhyme_word(l2))
 
 def rhymes_for_word(word, wordlist):
     open_db()
@@ -385,7 +406,7 @@ def UPDATE_PHONEME_LIST(phonemes=wordsets.custom_ipa):
     open_db()
     for w, p in phonemes:
         db[w.encode('utf8')] = p.encode('utf8')
-    close_db
+    close_db()
 
 
 

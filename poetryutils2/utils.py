@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import re
 import os
+import time
 import Stemmer
 
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -176,9 +177,10 @@ def debug_lines():
 # these, at some point, might want to be in another file:
 
 
-def line_iter(source, filters, line_key=None):
+def line_iter(source, filters, line_key=None, delay=0):
 
     for item in source:
+
         if isinstance(item, basestring):
             if isinstance(item, str):
                 line = item.decode('utf-8')
@@ -192,6 +194,9 @@ def line_iter(source, filters, line_key=None):
 
         if filter_line(line, filters):
             yield item
+            if delay:
+                time.sleep(delay)
+
 
 
 def lines(source, filters, line_key=None):
