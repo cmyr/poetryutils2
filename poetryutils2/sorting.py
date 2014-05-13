@@ -111,11 +111,15 @@ class Limericker(object):
 
 class Haikuer(object):
     """writes boooootiful poem"""
-    def __init__(self):
+    def __init__(self, debug):
         self.sevens = list()
         self.fives = list()
+        self.lines_seen = 0
+        self.number_of_poems = 0
 
     def add_line(self, line):
+        if self.debug:
+            self.lines_seen += 1
         syllable_count = count_syllables(line)
         if syllable_count == 5:
             self.fives.append(line)
@@ -124,6 +128,13 @@ class Haikuer(object):
             self.sevens.append(line)
 
         if (len(self.fives) >=2 and len(self.sevens)):
+            if self.debug:
+                self.number_of_poems += 1
+                print('found %d haiku in %d lines' % (
+                    self.number_of_poems,
+                    self.lines_seen)
+                )
+                
             return (
                 self.fives.pop(),
                 self.sevens.pop(),
