@@ -44,7 +44,7 @@ class Rhymer(object):
     def not_homophonic(self, line, end_sound):
         for other_line in self.endings[end_sound]:
             if not rhyme.lines_rhyme(line, other_line):
-                print('homophones:\n%s\n%s' % (line, other_line))
+                # print('homophones:\n%s\n%s' % (line, other_line))
                 return False
 
         return True
@@ -72,7 +72,7 @@ class Limericker(object):
     def __init__(self):
         super(Limericker, self).__init__()
         self.lines = defaultdict(list)
-        self.nines = Rhymer(line_count=3)
+        self.nines = Rhymer(rhyme_count=3)
         self.sixes = Rhymer()
 
 
@@ -80,12 +80,14 @@ class Limericker(object):
         syllable_count = count_syllables(line)
         new_rhyme = None
         lines = None
-        if syllables == 6:
+        if syllable_count == 6:
             lines, new_rhyme = 6, self.sixes.add_line(line)
-        elif syllables == 9:
+        elif syllable_count == 9:
             lines, new_rhyme = 9, self.nines.add_line(line)
 
-        self.lines[lines] = new_rhyme
+        if not new_rhyme:
+            return None
+
         return self.check_for_art()
 
 
@@ -106,6 +108,38 @@ class Limericker(object):
                 yield poem
 
 
+
+class Haikuer(object):
+    """writes boooootiful poem"""
+    def __init__(self):
+        self.sevens = list()
+        self.fives = list()
+
+    def add_line(self, line):
+        syllable_count = count_syllables(line)
+        if syllable_count == 5:
+            self.fives.append(line)
+
+        elif syllable_count == 7:
+            self.sevens.append(line)
+
+        if (len(self.fives) >=2 and len(self.sevens)):
+            return (
+                self.fives.pop(),
+                self.sevens.pop(),
+                self.fives.pop()
+                )
+
+
+        pass
+
+    def generate_from_source(self, source):
+        for line in source:
+            poem  = self.add_line(line)
+            if poem:
+                yield poem
+
+
 #     def add_line(self, line):
 #         syllable_count = poetryutils2.count_syllables(line)
 #         return self.rhymers[syllable_count].add_line(line)
@@ -114,12 +148,12 @@ class Limericker(object):
 # def coupler(input_iter):
 #     line_lengths = dict()
 
-def couplet_iter(source):
-    coupler = poetryutils2.Coupler()
-    for line in source:
-        result = coupler.add_line(line)
-        if result:
-            yield result
+# def couplet_iter(source):
+#     coupler = poetryutils2.Coupler()
+#     for line in source:
+#         result = coupler.add_line(line)
+#         if result:
+#             yield result
 
 def main():
     pass
