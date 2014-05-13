@@ -111,11 +111,13 @@ class Limericker(object):
 
 class Haikuer(object):
     """writes boooootiful poem"""
-    def __init__(self, debug):
+    def __init__(self, debug=False):
         self.sevens = list()
         self.fives = list()
+        self.debug = debug
         self.lines_seen = 0
         self.number_of_poems = 0
+        self.item_lookup = dict()
 
     def add_line(self, line):
         if self.debug:
@@ -134,7 +136,7 @@ class Haikuer(object):
                     self.number_of_poems,
                     self.lines_seen)
                 )
-                
+
             return (
                 self.fives.pop(),
                 self.sevens.pop(),
@@ -145,26 +147,25 @@ class Haikuer(object):
         pass
 
     def generate_from_source(self, source):
+
         for line in source:
             poem  = self.add_line(line)
             if poem:
                 yield poem
 
+    def generate_from_keyed_source(self, keyed_source, key):
+        """
+        for working with dictionaries rather than strings.
+        key should be the dictionary key for the actual text to be analyzed.
+        """
 
-#     def add_line(self, line):
-#         syllable_count = poetryutils2.count_syllables(line)
-#         return self.rhymers[syllable_count].add_line(line)
+        for item in keyed_source:
+            line = item[key]
+            self.item_lookup[line] = item
+            poem = self.add_line(line)
+            if poem:
+                yield tuple(self.item_lookup[k] for k in poem)
 
-        
-# def coupler(input_iter):
-#     line_lengths = dict()
-
-# def couplet_iter(source):
-#     coupler = poetryutils2.Coupler()
-#     for line in source:
-#         result = coupler.add_line(line)
-#         if result:
-#             yield result
 
 def main():
     pass
