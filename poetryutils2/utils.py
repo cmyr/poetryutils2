@@ -177,7 +177,18 @@ def debug_lines():
 # these, at some point, might want to be in another file:
 
 
-def line_iter(source, filters, line_key=None, delay=0):
+def line_iter(source, filters, key=None, delay=0):
+    """
+    takes a source iterator and a list of filters
+    yields items from source that pass filters.
+
+    if items in source are not strings, they must be dict-like
+    (they must implement __get__)
+    in this case, a key should be provided to relevant line property, i.e.:
+
+    for tweets where we want to preserve metadata,
+    we would pass key='text', e.g.
+    """
 
     for item in source:
 
@@ -187,10 +198,10 @@ def line_iter(source, filters, line_key=None, delay=0):
             else:
                 line = item
         else:
-            if not line_key:
-                print('non-string sources require a line_key')
+            if not key:
+                print('non-string sources require a key')
                 return
-            line = item[line_key]
+            line = item[key]
 
         if filter_line(line, filters):
             yield item
@@ -199,8 +210,8 @@ def line_iter(source, filters, line_key=None, delay=0):
 
 
 
-def lines(source, filters, line_key=None):
-    return [l for l in line_iter(source, filters, line_key)]
+def lines(source, filters, key=None):
+    return [l for l in line_iter(source, filters, key)]
 
 def filter_line(line, filters):
     for f in filters:
