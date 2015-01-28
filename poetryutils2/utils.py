@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import re
 import os
 import time
-import Stemmer
+# import Stemmer
 
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
 # helpers etc
@@ -80,7 +80,7 @@ def wordlist():
     return words
 
 
-STEMMER = Stemmer.Stemmer('english')
+# STEMMER = Stemmer.Stemmer('english')
 
 # So this is kind of messy, and doesn't work very well right now.
 # Basically: I want to do 'realness checking' to figure out
@@ -139,23 +139,23 @@ def is_real_word(word, debug=False):
 
     # ------option 2 ------- #
 
-        stem = STEMMER.stemWord(word)
-        if stem != word:
-            result = is_real_word(stem)
-            if result:
-                return True
+        # stem = STEMMER.stemWord(word)
+        # if stem != word:
+        #     result = is_real_word(stem)
+        #     if result:
+        #         return True
 
-            if stem[-1] == 'i':
-                # sacrificing 'skiing' for the common good
-                stem = stem[:-1] + 'y'
-                return is_real_word(stem)
+        #     if stem[-1] == 'i':
+        #         # sacrificing 'skiing' for the common good
+        #         stem = stem[:-1] + 'y'
+        #         return is_real_word(stem)
 
-            stem += 'e'
-            result = is_real_word(stem)
-            if result:
-                return True
-            if debug:
-                print('trying stem %s for word %s' % (stem, word))
+        #     stem += 'e'
+        #     result = is_real_word(stem)
+        #     if result:
+        #         return True
+        #     if debug:
+        #         print('trying stem %s for word %s' % (stem, word))
 
 
     # don't comment me
