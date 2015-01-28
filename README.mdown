@@ -8,9 +8,12 @@ syllable counting stuff taken from a script by alex.rudnick that I found on the 
 
 my approach to rhymes (essentially the idea of offloading my phoneme-gathering to espeak) is from a script by Imri Goldberg.
 
+There are several examples of how I have used these utilities in the /bin folder. These samples will require a text source; I have made a sample source (a 70+ MB text file) available at http://www.cmyr.net/media/sample.txt. You will need to edit these examples to point to the correct path on your system.
 
 to use this for rhyme finding:
 
  - you must have espeak installed (espeak.sourceforge.net/‎)
  - you need to set a list of words you would like to be searching, with set_word_list(), which will have there phonemes extracted; this can take a while, like several hours for 200k words (these are cached, so you won't have to do it repeatedly)
  -get_rhyme_words(w) will then return words in the  list that rhyme with w.
+ 
+ 
