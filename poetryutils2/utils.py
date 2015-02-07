@@ -70,12 +70,15 @@ def synonyms(word):
 
 def wordlist():
     # if not hasattr(wordlist, "words"):
-    import nltk
-    words = set([w.lower().decode('utf8') for w in nltk.corpus.words.words()])
-    filepath = os.path.join(MODULE_PATH, 'words.txt')
-    with open(filepath) as f:
-        more_words = [l.decode('utf8') for l in f.read().splitlines()]
-        words.update(set(more_words))
+    try:
+        import nltk
+        words = set([w.lower().decode('utf8') for w in nltk.corpus.words.words()])
+        filepath = os.path.join(MODULE_PATH, 'words.txt')
+        with open(filepath) as f:
+            more_words = [l.decode('utf8') for l in f.read().splitlines()]
+            words.update(set(more_words))
+    except ImportError as err:
+        words = list()
 
     return words
 
@@ -224,11 +227,10 @@ def prune_dict(indict, dict_template):
     outdict = dict()
     for key, value in dict_template.items():
         keep = indict.get(key)
-        if keep:
-            if isinstance(keep, dict) and isinstance(value, dict):
-                outdict[key] = prune_dict(keep, value)
-            else:
-                outdict[key] = value
+        if isinstance(keep, dict) and isinstance(value, dict):
+            outdict[key] = prune_dict(keep, value)
+        else:
+            outdict[key] = keep
     return outdict
 
     
