@@ -66,7 +66,7 @@ phone_cache = LRUCache()
 def open_db():
     global db
     if not db:
-        db = anydbm.open(dbpath, 'cs')
+        db = anydbm.open(dbpath, 'c')
         stats['new'] = 0
 
 
