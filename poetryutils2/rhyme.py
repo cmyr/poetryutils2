@@ -289,7 +289,11 @@ def words_rhyme(w1, w2):
     return False
 
 def lines_rhyme(l1, l2):
-    return words_rhyme(rhyme_word(l1), rhyme_word(l2))
+    try:
+        return words_rhyme(rhyme_word(l1), rhyme_word(l2))
+    except ValueError as err:
+        print(l1, l2)
+        return False
 
 def rhymes_for_word(word, wordlist):
     open_db()
