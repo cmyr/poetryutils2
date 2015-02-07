@@ -61,9 +61,13 @@ ipa_vowels = set("ˈˌaeiouyɑɛɪöɩɔɚɷʊʌœöøəæː")
 #             phonemes = _extract_phonemes(word)[1]
 #         phoneme_index[word] = phonemes
 #     return phonemes
-dbpath = os.path.join(utils.MODULE_PATH, 'data/phonemes.db')
-if not os.path.exists(dbpath):
-    os.makedirs(dbpath)
+
+data_dir = os.path.join(utils.MODULE_PATH, 'data')
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+
+dbpath = os.path.join(data_dir, 'phonemes.db')
+
 
 db = None
 stats = dict()
