@@ -62,6 +62,9 @@ ipa_vowels = set("ˈˌaeiouyɑɛɪöɩɔɚɷʊʌœöøəæː")
 #         phoneme_index[word] = phonemes
 #     return phonemes
 dbpath = os.path.join(utils.MODULE_PATH, 'data/phonemes.db')
+if not os.path.exists(dbpath):
+    os.makedirs(dbpath)
+
 db = None
 stats = dict()
 phone_cache = LRUCache()
