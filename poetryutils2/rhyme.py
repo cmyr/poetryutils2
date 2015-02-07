@@ -21,46 +21,23 @@ from .mpycache import LRUCache
 from . import utils
 from . import wordsets
 
-# PHONEME_INDEX_PICKLE_PATH = os.path.join(utils.MODULE_PATH, "data/phonemes.p")
-# phoneme_index = None
-# modified_phonemes = None
-# wordlist = None
-# rhyme_table = None
-_RHYME_DEBUG = False
+# extracting phonemes relies on espeak (http://espeak.sourceforge.net)
+# espeak is aliased to 'speak' on some systems
+ESPEAK_COMMAND_NAME = ""
+if len(os.popen3("espeak -v english-us -q --ipa %s", 'r')[1].read()):
+    ESPEAK_COMMAND_NAME = "espeak"
+elif len(os.popen3("speak -v english-us -q --ipa %s", 'r')[1].read()):
+    ESPEAK_COMMAND_NAME = "speak"
+else:
+    raise ImportError("rhyme module requires espeak to be installed. http://espeak.sourceforge.net")
+
+
+RHYME_DEBUG = False
 
 double_end_letters = set(['f', 'e', 'l', 'i', 'o', 's'])
 ipa_vowels = set("ˈˌaeiouyɑɛɪöɩɔɚɷʊʌœöøəæː")
 
 
-# def load_phoneme_index():
-#     global phoneme_index, modified_phonemes, wordlist
-#     if not phoneme_index:
-#         print('loading phoneme index')
-#         try:
-#             phoneme_index = pickle.load(open(PHONEME_INDEX_PICKLE_PATH, 'r'))
-# modified_phonemes = convert_phoneme_index()
-# wordlist = phoneme_index.keys()
-#         except IOError:
-#             print('io error in rhymes')
-#             phoneme_index = dict()
-
-
-# def build_rhyme_index():
-#     global rhyme_table
-#     rhyme_table = defaultdict(set)
-#     for w,p in phoneme_index.items():
-#         e = end_sound(p)
-#         rhyme_table[e].add(w)
-# def get_phonemes(word):
-#     if not phoneme_index:
-#         load_phoneme_index()
-#     word = normalize_word(word)
-#     if word:
-#         phonemes = phoneme_index.get(word)
-#         if not phonemes:
-#             phonemes = _extract_phonemes(word)[1]
-#         phoneme_index[word] = phonemes
-#     return phonemes
 
 data_dir = os.path.join(utils.MODULE_PATH, 'data')
 if not os.path.exists(data_dir):
@@ -86,7 +63,7 @@ def close_db():
     if not db:
         return
         
-    if stats['new'] > 0 and _RHYME_DEBUG:
+    if stats['new'] > 0 and RHYME_DEBUG:
         print('added %d new words to phoneme index' % stats['new'])
     db.close()
     db = None
@@ -157,7 +134,7 @@ def _normalize_word(word):
 
 
 def get_phonemes(word):
-    if _RHYME_DEBUG:
+    if RHYME_DEBUG:
         assert word == _normalize_word(word), print(
             'passed unnormalized %s to get_phonemes' % word)
 
@@ -261,8 +238,8 @@ def sound_for_word(word, func=_end_sound):
 
 
 def _extract_phonemes(word):
-    espeak_output = os.popen3("speak -v english-us -q --ipa %s" %
-                              word, 'r')[1].read()
+    espeak_command = "%s -v english-us -q --ipa %s" % (ESPEAK_COMMAND_NAME, word)
+    espeak_output = os.popen3(espeak_command, 'r')[1].read()
     phonemes = espeak_output.strip().decode('utf8')
     stats['new'] += 1
     return word, phonemes
@@ -272,14 +249,14 @@ def words_are_homophony(w1, w2):
     phoneme1 = get_phonemes(w1)
     phoneme2 = get_phonemes(w2)
 
-    if _RHYME_DEBUG:
+    if RHYME_DEBUG:
         print(type(phoneme1), type(phoneme2))
         print(phoneme1, phoneme2)
 
     # phoneme1 = re.sub(ur'[ˈˌ]', '', phoneme1, re.UNICODE)
     # phoneme2 = re.sub(ur'[ˈˌ]', '', phoneme2, re.UNICODE)
 
-    if _RHYME_DEBUG:
+    if RHYME_DEBUG:
         print(phoneme1, phoneme2)
 
     if phoneme1 == phoneme2:
