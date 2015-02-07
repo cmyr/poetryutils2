@@ -6,7 +6,11 @@ from __future__ import unicode_literals
 import re
 import os
 import sys
-import anydbm
+try: 
+    import gdbm as dbm
+except ImportError:
+    import anydbm as dbm
+
 import cPickle as pickle
 import time
 import multiprocessing
@@ -66,7 +70,7 @@ phone_cache = LRUCache()
 def open_db():
     global db
     if not db:
-        db = anydbm.open(dbpath, 'c')
+        db = dbm.open(dbpath, 'c')
         stats['new'] = 0
 
 
