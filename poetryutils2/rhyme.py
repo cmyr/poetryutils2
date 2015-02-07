@@ -282,6 +282,9 @@ def words_rhyme(w1, w2):
     p1 = get_phonemes(w1)
     p2 = get_phonemes(w2)
     close_db()
+    if p1 == "" or p2 == "":
+        print("no phonemes for words %s:%s / %s:%s" % (w1, p1, w2, p2)
+            return False
     if _end_sound(p1) == _end_sound(p2):
         if not words_are_homophony(w1, w2):
             return True
@@ -292,7 +295,7 @@ def lines_rhyme(l1, l2):
     try:
         return words_rhyme(rhyme_word(l1), rhyme_word(l2))
     except ValueError as err:
-        print(l1, l2)
+        print("value error:\n", l1, l2)
         return False
 
 def rhymes_for_word(word, wordlist):
