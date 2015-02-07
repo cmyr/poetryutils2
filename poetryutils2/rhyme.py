@@ -8,8 +8,10 @@ import os
 import sys
 try: 
     import gdbm as dbm
+    DBM_FLAGS = 'cs'
 except ImportError:
     import anydbm as dbm
+    DBM_FLAGS = 'c'
 
 import cPickle as pickle
 import time
@@ -54,7 +56,7 @@ phone_cache = LRUCache()
 def open_db():
     global db
     if not db:
-        db = dbm.open(dbpath, 'c')
+        db = dbm.open(dbpath, DBM_FLAGS)
         stats['new'] = 0
 
 
