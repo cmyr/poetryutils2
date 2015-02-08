@@ -115,7 +115,7 @@ class Limericker(object):
                 yield poem
 
     def prettify(self, poem):
-        return "%s\n%s\n%s\n%s\n%s\n" % poem
+        return "\n%s\n%s\n%s\n%s\n%s\n" % poem
 
 
 
