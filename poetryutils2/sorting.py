@@ -66,6 +66,12 @@ class Coupler(object):
         syllable_count = count_syllables(line)
         return self.rhymers[syllable_count].add_line(line)
 
+    def generate_from_source(self, source):
+        for line in source:
+            couplet = self.add_line(line)
+            if couplet:
+                yield couplet
+
 
 class Limericker(object):
     """finds limericks"""
@@ -88,17 +94,18 @@ class Limericker(object):
         if not new_rhyme:
             return None
 
+        self.lines[lines].append(new_rhyme)
         return self.check_for_art()
 
 
     def check_for_art(self):
         if (len(self.lines[9]) and len(self.lines[6]) and 
-            not rhyme.lines_rhyme(self.lines[9][0], self.lines[6][0])):
+            not rhyme.lines_rhyme(self.lines[9][0][0], self.lines[6][0][0])):
 
             nines = self.lines[9].pop()
             sixes = self.lines[6].pop()
 
-            poem = (nines.pop(), nines.pop(), sixes.pop(), sixes.pop(), nines.pop())
+            poem = (nines[0], nines[1], sixes[0], sixes[1], nines[2])
             return poem
 
     def generate_from_source(self, source):
@@ -106,6 +113,9 @@ class Limericker(object):
             poem = self.add_line(line)
             if poem:
                 yield poem
+
+    def prettify(self, poem):
+        return "%s\n%s\n%s\n%s\n%s\n" % poem
 
 
 
@@ -143,11 +153,7 @@ class Haikuer(object):
                 self.fives.pop()
                 )
 
-
-        pass
-
     def generate_from_source(self, source):
-
         for line in source:
             poem  = self.add_line(line)
             if poem:
