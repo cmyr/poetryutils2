@@ -78,24 +78,17 @@ class Limericker(object):
     def __init__(self):
         super(Limericker, self).__init__()
         self.lines = defaultdict(list)
-        self.nines = Rhymer(rhyme_count=3)
-        self.sixes = Rhymer()
-
+        self.rhymers = {9: Rhymer(rhyme_count=3), 6: Rhymer()} 
 
     def add_line(self, line):
         syllable_count = count_syllables(line)
         new_rhyme = None
-        lines = None
-        if syllable_count == 6:
-            lines, new_rhyme = 6, self.sixes.add_line(line)
-        elif syllable_count == 9:
-            lines, new_rhyme = 9, self.nines.add_line(line)
+        if syllable_count == 6 or syllable_count == 9:
+            new_rhyme = self.rhymers[syllable_count].add_line(line)
 
-        if not new_rhyme:
-            return None
-
-        self.lines[lines].append(new_rhyme)
-        return self.check_for_art()
+        if new_rhyme:
+            self.lines[syllable_count].append(new_rhyme)
+            return self.check_for_art()
 
 
     def check_for_art(self):
