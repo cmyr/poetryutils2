@@ -222,17 +222,6 @@ def filter_line(line, filters):
             return False
 
     return True
-
-def prune_dict(indict, dict_template):
-    outdict = dict()
-    for key, value in dict_template.items():
-        keep = indict.get(key)
-        if isinstance(keep, dict) and isinstance(value, dict):
-            outdict[key] = prune_dict(keep, value)
-        else:
-            outdict[key] = keep
-    return outdict
-
     
 
 def main():
