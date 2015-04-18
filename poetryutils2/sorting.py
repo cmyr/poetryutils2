@@ -2,7 +2,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from . import rhyme
 from .syllables import count_syllables
@@ -49,7 +49,10 @@ class Rhymer(object):
 
         return True
 
-
+    def debug_info(self):
+        ending_counts = Counter([len(v) for v in self.endings.values()])
+        for item, count in ending_counts.most_common():
+            print("%d rhyme groups with length %d" % (count, item))
 
     def debug(self):
         print(self.endings)
@@ -75,10 +78,12 @@ class Coupler(object):
 
 class Limericker(object):
     """finds limericks"""
-    def __init__(self):
+    def __init__(self, debug=False):
         super(Limericker, self).__init__()
         self.lines = defaultdict(list)
-        self.rhymers = {9: Rhymer(rhyme_count=3), 6: Rhymer()} 
+        self.rhymers = {9: Rhymer(rhyme_count=3), 6: Rhymer()}
+        self.debug = debug
+        self.lines_seen = 0
 
     def add_line(self, line):
         syllable_count = count_syllables(line)
@@ -89,7 +94,6 @@ class Limericker(object):
         if new_rhyme:
             self.lines[syllable_count].append(new_rhyme)
             return self.check_for_art()
-
 
     def check_for_art(self):
         if (len(self.lines[9]) and len(self.lines[6]) and 
@@ -103,12 +107,23 @@ class Limericker(object):
 
     def generate_from_source(self, source):
         for line in source:
+            self.lines_seen += 1
             poem = self.add_line(line)
+            # print debug info if desired
+            if self.debug and self.lines_seen % 100 == 0:
+                self.debug_info()
             if poem:
                 yield poem
 
     def prettify(self, poem):
         return "\n%s\n%s\n%s\n%s\n%s\n" % poem
+
+    def debug_info(self):
+        for (key, value) in self.lines.items():
+            print('lines[%d] = %d' % (key, len(values)))
+        for count in (6, 9):
+            print("%d syllable rhymes:" % count)
+            self.rhymers[count].debug_info()
 
 
 
