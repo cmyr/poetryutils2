@@ -96,14 +96,15 @@ class Limericker(object):
             return self.check_for_art()
 
     def check_for_art(self):
-        if (len(self.lines[9]) and len(self.lines[6]) and 
-            not rhyme.lines_rhyme(self.lines[9][0][0], self.lines[6][0][0])):
-
-            nines = self.lines[9].pop()
-            sixes = self.lines[6].pop()
-
-            poem = (nines[0], nines[1], sixes[0], sixes[1], nines[2])
-            return poem
+        if len(self.lines[9]) and len(self.lines[6]):
+            for niner in self.lines[9]:
+                for sixer in self.lines[6]:
+                    if not rhyme.lines_rhyme(niner[0], sixer[0]):
+                        self.lines[9].remove(niner)
+                        self.lines[6].remove(sixer)
+                        poem = (niner[0], niner[1], sixer[0], sixer[1], niner[2])
+                        return poem
+    
 
     def generate_from_source(self, source):
         for line in source:
@@ -120,7 +121,7 @@ class Limericker(object):
 
     def debug_info(self):
         for (key, value) in self.lines.items():
-            print('lines[%d] = %d' % (key, len(values)))
+            print('lines[%d] = %d' % (key, len(value)))
         for count in (6, 9):
             print("%d syllable rhymes:" % count)
             self.rhymers[count].debug_info()
