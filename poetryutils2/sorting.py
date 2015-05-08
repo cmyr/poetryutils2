@@ -3,6 +3,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from collections import defaultdict, Counter, namedtuple
+import sys
 
 from . import rhyme
 from .syllables import count_syllables
@@ -96,12 +97,6 @@ class Coupler(Poet):
         syllable_count = count_syllables(line.text)
         return self.rhymers[syllable_count].add_line(line)
 
-    # def generate_from_source(self, source):
-    #     for line in source:
-    #         couplet = self.add_line(line)
-    #         if couplet:
-    #             yield couplet
-
 
 class Limericker(Poet):
 
@@ -153,6 +148,9 @@ class Haikuer(Poet):
         self.item_lookup = dict()
 
     def add_line(self, line):
+        if self.debug:
+            sys.stdout.write("seen %d\r" % self.lines_seen)
+            sys.stdout.flush()
         syllable_count = count_syllables(line.text)
         if syllable_count == 5:
             self.fives.append(line)
