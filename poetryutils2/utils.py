@@ -194,23 +194,24 @@ def line_iter(source, filters, key=None, delay=0):
     """
 
     for item in source:
-
         if isinstance(item, basestring):
-            if isinstance(item, str):
-                line = item.decode('utf-8')
-            else:
-                line = item
+            line = unicodify(item)
         else:
-            if not key:
-                print('non-string sources require a key')
-                return
-            line = item[key]
+            assert key != None, 'non-string sources require a key'
+            line = unicodify(item[key])
 
         if filter_line(line, filters):
             yield item
             if delay:
                 time.sleep(delay)
 
+
+def unicodify(item):
+    assert isinstance(item, basestring), "unicodify expects a string type"
+    if isinstance(item, str):
+        return item.decode('utf-8')
+    if isinstance(item, unicode):
+        return item
 
 
 def lines(source, filters, key=None):
