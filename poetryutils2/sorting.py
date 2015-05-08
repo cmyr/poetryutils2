@@ -2,11 +2,42 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, namedtuple
 
 from . import rhyme
 from .syllables import count_syllables
 
+NormalizedLine = namedtuple('NormalizedLine', ['line', 'original'])
+
+class Poet(object):
+    """Poet is an abstract superclass for poem generators."""
+    def __init__(self, debug=False):
+        super(Poet, self).__init__()
+        self.lines_seen = 0
+        self.debug = debug
+
+    def generate_from_source(self, source, key=None):
+        for item in source:
+            if isinstance(item, basestring):
+                if isinstance(item, str):
+                    line = NormalizedLine(item.decode('utf-8'), None)
+                else:
+                    line = NormalizedLine(item, None)
+            else:
+                if not key:
+                    print('non-string sources require a key')
+                    return
+                line = NormalizedLine(item[key], item)
+
+            self.lines_seen += 1            
+            poem = self.add_line(line)
+            if poem:
+                yield poem
+
+    def add_line(self, line):
+        return line
+
+        
 
 class Rhymer(object):
     """
