@@ -46,6 +46,9 @@ class Poet(object):
         lines = [l.text for l in poem]
         return "\n" + "\n".join(lines) + "\n"
 
+    def dictify(self, poem):
+        return [{"text": l.text, "info": l.info} for l in poem]
+
 
 class Rhymer(Poet):
 
@@ -98,6 +101,30 @@ class Coupler(Poet):
         return self.rhymers[syllable_count].add_line(line)
 
 
+class SyllablePoet(Poet):
+    """Generates poems with lines of given syllable counts"""
+    def __init__(self, line_syllables):
+        super(SyllablePoet, self).__init__()
+        self.line_syllables = line_syllables
+        self.desired_syllables_set = set(line_syllables)
+        self.syllable_numbers = {s: line_syllables.count(s) for s in set(line_syllables)}
+        self.lines = defaultdict(list)
+
+    def add_line(self, line):
+        syllable_count = count_syllables(line.text)
+        if syllable_count in self.desired_syllables_set:
+            self.lines[syllable_count].append(line)
+            return self.check_for_art()
+
+    def check_for_art(self):
+        for syllables, count in self.syllable_numbers.items():
+            if len(self.lines[syllables]) < count:
+                return
+
+        return [self.lines[s].pop() for s in self.line_syllables]
+
+
+        
 class Limericker(Poet):
 
     """finds limericks"""
