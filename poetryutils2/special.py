@@ -31,10 +31,9 @@ def random_poem():
         if full_poem:
             return extract_poem(full_poem)
 
+
 # this is way more manual, because their nice random function doesn't seem
 # to work correctly
-
-
 def random_poem2():
     total_poems = 12793  # just looked up on
     total_pages = int(total_poems / 20)  # poems per page
@@ -49,8 +48,8 @@ def random_poem2():
 
 
 def get_poem_at_url(url):
-    print(poem_link)
-    full_poem = get_soup(poem_link)
+    print(url)
+    full_poem = get_soup(url)
     if full_poem:
         return extract_poem(full_poem)
 
@@ -85,30 +84,8 @@ def pretty_print_poem(poem):
     return "%s — %s\n\n%s" % (poem.title, poem.author, "\n".join(poem.lines))
 
 
-def test():
-    soup = BeautifulSoup(raw_sample)
-    poem = soup.find(id="poemwrapper")
-
-    title = get_title(poem)
-    assert title == "Lamenting Widow", "title incorrect: %s" % title
-
-    author = get_author(poem)
-    assert author == "Ho Xuan Huong", "author incorrect: %s" % author
-
-    lines = get_lines(poem)
-    assert len(lines) == 4
-
-    # random_poem2()
+def main():
     print(pretty_print_poem(random_poem2()))
 
-
-# def main():
-#     import argparse
-    # parser = argparse.ArgumentParser()
-#     parser.add_argument('arg1', type=str, help="required argument")
-#     parser.add_argument('arg2', '--argument-2', help='optional boolean argument', action="store_true")
-#     args = parser.parse_args()
-
-
 if __name__ == "__main__":
-    test()
+    main()
