@@ -4,7 +4,9 @@ from __future__ import unicode_literals
 
 from collections import defaultdict, Counter, namedtuple
 import sys
+import re
 
+from textblob import TextBlob
 from . import rhyme
 from .syllables import count_syllables
 
@@ -198,6 +200,57 @@ class Haikuer(Poet):
                 self.sevens.pop(),
                 self.fives.pop()
             )
+
+class Mimic(Poet):
+    """docstring for Mimic"""
+    def __init__(self, poem):
+        super(Mimic, self).__init__()
+        self.poem = poem
+        self.normalized = self.normalize_poem(poem)
+        self.pos = self.line_pos(self.normalized)
+        self.reset()
+        
+
+    def reset(self):
+        self.pos_map = list(self.pos)
+        self.found_words = [None for w in self.pos]
+        self.looking_for_pos = set(self.pos)
+        # print(self.pos)
+        # print(self.normalized, self.pos_map, self.looking_for_pos)
+
+    def normalize_poem(self, poem):
+        normalized = re.sub(r'—', ' ', poem)
+        return normalized.splitlines()
+
+    def line_pos(self, lines):
+        pos = [TextBlob(l).tags for l in lines]
+        pos = [p for l in pos for w, p in l]
+        return pos
+
+    def add_line(self, line):
+        tags = TextBlob(line.text).tags
+        for word, tag in tags:
+            if tag in self.looking_for_pos:
+                self.handle_new_word((word, tag))
+        return self.check_for_art()
+
+    def handle_new_word(self, tagged_word):
+        i = self.pos_map.index(tagged_word[1])
+        assert i != None, "failed to find %s in pos map" % tagged_word[1]
+        self.pos_map[i] = None
+        self.found_words[i] = tagged_word[0]
+        self.looking_for_pos = set(i for i in self.pos_map if i != None)
+
+    def check_for_art(self):
+        if len(self.looking_for_pos) == 0:
+            outlines = list()
+            for line in self.normalized:
+                outlines.append(" ".join(self.found_words[:len(line)]))
+                self.found_words = self.found_words[len(line):]
+
+            self.reset()
+            return tuple(NormalizedLine(l, None) for l in outlines)
+
 
 
 def main():
