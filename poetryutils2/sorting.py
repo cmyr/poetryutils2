@@ -22,7 +22,7 @@ class Poet(object):
         self.lines_seen = 0
         self.debug = debug
 
-    def generate_from_source(self, source, key=None):
+    def generate_from_source(self, source, key=None, yield_lines=False):
         for item in source:
             if isinstance(item, basestring):
                 if isinstance(item, str):
@@ -36,6 +36,8 @@ class Poet(object):
                 line = NormalizedLine(item[key], item)
 
             self.lines_seen += 1
+            if yield_lines:
+                yield line.text
             poem = self.add_line(line)
             if poem:
                 yield poem
@@ -250,6 +252,27 @@ class Mimic(Poet):
 
             self.reset()
             return tuple(NormalizedLine(l, None) for l in outlines)
+
+
+class Concrete(Poet):
+    """docstring for Concrete"""
+    def __init__(self, line_lengths=list(range(8, 40))):
+        super(Concrete, self).__init__()
+        self.line_lengths = line_lengths
+        self.next_index = 0
+        self.lines = list()
+        print(self.line_lengths)
+
+    def add_line(self, line):
+        if len(line.text) == self.line_lengths[self.next_index]:
+            self.lines.append(line)
+            self.next_index = (self.next_index + 1) % len(self.line_lengths)
+            if self.next_index != 0:
+                return tuple(self.lines)
+            else:
+                poem = tuple(self.lines)
+                self.lines = list()
+                return poem
 
 
 
