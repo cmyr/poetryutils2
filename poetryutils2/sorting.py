@@ -22,6 +22,9 @@ class Poet(object):
         self.lines_seen = 0
         self.debug = debug
 
+    def identifier(self):
+        return self.__doc__
+
     def generate_from_source(self, source, key=None, yield_lines=False):
         for item in source:
             if isinstance(item, basestring):
@@ -39,7 +42,11 @@ class Poet(object):
             if yield_lines:
                 yield line.text
             poem = self.add_line(line)
-            if poem:
+            # multipoet returns lists of poems
+            if isinstance(poem, list):
+                for p in poem:
+                    yield p
+            elif isinstance(poem, tuple):
                 yield poem
 
     def add_line(self, line):
@@ -125,7 +132,7 @@ class SyllablePoet(Poet):
             if len(self.lines[syllables]) < count:
                 return
 
-        return [self.lines[s].pop() for s in self.line_syllables]
+        return tuple([self.lines[s].pop() for s in self.line_syllables])
 
 
         
@@ -255,7 +262,7 @@ class Mimic(Poet):
 
 
 class Concrete(Poet):
-    """docstring for Concrete"""
+    """writes concrete poems, where the qualifier is line length."""
     def __init__(self, line_lengths=list(range(8, 40))):
         super(Concrete, self).__init__()
         self.line_lengths = line_lengths
@@ -275,6 +282,36 @@ class Concrete(Poet):
                 return poem
 
 
+class MultiPoet(Poet):
+    """wraps multiple poet subclasses, feeding lines to each"""
+    def __init__(self, poets):
+        super(MultiPoet, self).__init__()
+        self.poets = poets
+        self.keyed_poets = {p.identifier(): p for p in poets}
+        
+    def add_line(self, line):
+        poems = [p.add_line(line) for p in self.poets]
+        poems = [p for p in poems if p]
+        if len(poems):
+            return poems
+
+    def add_poet(self, poet, key=None):
+        self.poets.append(poet)
+        pkey = key or poet.identifier()
+        self.keyed_poets[pkey] = poet
+
+    def replace_poet(self, poet, key=None):
+        pkey = key or poet.identifier()
+        existing = self.keyed_poets.get(pkey)
+        if existing:
+            idx = self.poets.index(existing)
+            self.poets[idx] = poet
+        self.keyed_poets[pkey] = poet
+
+    def remove_poet(self, key):
+        if key in self.keyed_poets:
+            self.poets.remove(self.keyed_poets[key])
+            del self.keyed_poets[key]
 
 def main():
     pass
