@@ -13,6 +13,33 @@ from .syllables import count_syllables
 NormalizedLine = namedtuple('NormalizedLine', ['text', 'info'])
 
 
+class Poem(object):
+
+    """lines + metadata"""
+
+    def __init__(self, poem_type, lines):
+        super(Poem, self).__init__()
+        self.poem_type = poem_type
+        self.lines = lines
+        self.title = title
+
+    def __str__(self):
+        return str(unicode(self))
+
+    def __unicode__(self):
+        return "\n" + "\n".join(l.text for l in self.lines) + "\n"
+
+    def to_dict(self):
+        return {
+        'poem_type': self.poem_type,
+        'lines': [{"text": l.text, "info": l.info} for l in self.lines]
+        }
+
+
+
+    def pretty_print(self):
+        return unicode(self)
+
 class Poet(object):
 
     """Poet is an abstract superclass for poem generators."""
@@ -21,9 +48,11 @@ class Poet(object):
         super(Poet, self).__init__()
         self.lines_seen = 0
         self.debug = debug
+        self._poem_type = "base poem"
 
-    def identifier(self):
-        return self.__doc__
+    @property
+    def poem_type(self):
+        return self._poem_type
 
     def generate_from_source(self, source, key=None, yield_lines=False):
         for item in source:
@@ -46,16 +75,12 @@ class Poet(object):
             if isinstance(poem, list):
                 for p in poem:
                     yield p
-            elif isinstance(poem, tuple):
+            elif isinstance(poem, Poem):
                 yield poem
 
     def add_line(self, line):
         # poems are tuples for a reason i should probably revisit?
-        return (line,)
-
-    def prettify(self, poem):
-        lines = [l.text for l in poem]
-        return "\n" + "\n".join(lines) + "\n"
+        return Poem(self.poem_type, [line])
 
     def dictify(self, poem):
         return [{"text": l.text, "info": l.info} for l in poem]
@@ -72,6 +97,7 @@ class Rhymer(Poet):
         super(Rhymer, self).__init__(debug)
         self.endings = defaultdict(list)
         self.rhyme_count = rhyme_count
+        self._poem_type = "rhyme"
 
     def add_line(self, line):
         end_word = rhyme.rhyme_word_if_appropriate(line.text)
@@ -106,6 +132,7 @@ class Coupler(Poet):
     def __init__(self):
         super(Coupler, self).__init__()
         self.rhymers = defaultdict(Rhymer)
+        self._poem_type = "couplet"
 
     def add_line(self, line):
         syllable_count = count_syllables(line.text)
@@ -113,13 +140,17 @@ class Coupler(Poet):
 
 
 class SyllablePoet(Poet):
+
     """Generates poems with lines of given syllable counts"""
+
     def __init__(self, line_syllables):
         super(SyllablePoet, self).__init__()
         self.line_syllables = line_syllables
         self.desired_syllables_set = set(line_syllables)
-        self.syllable_numbers = {s: line_syllables.count(s) for s in set(line_syllables)}
+        self.syllable_numbers = {
+            s: line_syllables.count(s) for s in set(line_syllables)}
         self.lines = defaultdict(list)
+        self._poem_type = "syllable poem"
 
     def add_line(self, line):
         syllable_count = count_syllables(line.text)
@@ -132,10 +163,9 @@ class SyllablePoet(Poet):
             if len(self.lines[syllables]) < count:
                 return
 
-        return tuple([self.lines[s].pop() for s in self.line_syllables])
+        return Poem(self.poem_type, [self.lines[s].pop() for s in self.line_syllables])
 
 
-        
 class Limericker(Poet):
 
     """finds limericks"""
@@ -144,6 +174,7 @@ class Limericker(Poet):
         super(Limericker, self).__init__(debug)
         self.lines = defaultdict(list)
         self.rhymers = {9: Rhymer(rhyme_count=3), 6: Rhymer()}
+        self._poem_type = "limerick"
 
     def add_line(self, line):
         syllable_count = count_syllables(line.text)
@@ -162,9 +193,9 @@ class Limericker(Poet):
                     if not rhyme.lines_rhyme(niner[0].text, sixer[0].text):
                         self.lines[9].remove(niner)
                         self.lines[6].remove(sixer)
-                        poem = (
-                            niner[0], niner[1], sixer[0], sixer[1], niner[2])
-                        return poem
+                        lines = [
+                            niner[0], niner[1], sixer[0], sixer[1], niner[2]]
+                        return Poem(self.poem_type, lines)
 
     def debug_info(self):
         for (key, value) in self.lines.items():
@@ -184,6 +215,7 @@ class Haikuer(Poet):
         self.fives = list()
         self.number_of_poems = 0
         self.item_lookup = dict()
+        self._poem_type = "haiku"
 
     def add_line(self, line):
         if self.debug:
@@ -204,28 +236,29 @@ class Haikuer(Poet):
                     self.lines_seen)
                 )
 
-            return (
-                self.fives.pop(),
-                self.sevens.pop(),
-                self.fives.pop()
-            )
+            return Poem(self.poem_type,
+                        [self.fives.pop(),
+                         self.sevens.pop(),
+                         self.fives.pop()]
+                        )
+
 
 class Mimic(Poet):
+
     """docstring for Mimic"""
+
     def __init__(self, poem):
         super(Mimic, self).__init__()
         self.poem = poem
         self.normalized = self.normalize_poem(poem)
         self.pos = self.line_pos(self.normalized)
+        self._poem_type = "mimic"
         self.reset()
-        
 
     def reset(self):
         self.pos_map = list(self.pos)
         self.found_words = [None for w in self.pos]
         self.looking_for_pos = set(self.pos)
-        # print(self.pos)
-        # print(self.normalized, self.pos_map, self.looking_for_pos)
 
     def normalize_poem(self, poem):
         normalized = re.sub(r'—', ' ', poem)
@@ -258,37 +291,43 @@ class Mimic(Poet):
                 self.found_words = self.found_words[len(line):]
 
             self.reset()
-            return tuple(NormalizedLine(l, None) for l in outlines)
+            return Poem(self.poem_type,
+                        [NormalizedLine(l, None) for l in outlines])
 
 
 class Concrete(Poet):
+
     """writes concrete poems, where the qualifier is line length."""
-    def __init__(self, line_lengths=list(range(8, 40))):
+
+    def __init__(self, line_lengths=list(range(8, 40)), show_progress=False):
         super(Concrete, self).__init__()
         self.line_lengths = line_lengths
         self.next_index = 0
         self.lines = list()
-        print(self.line_lengths)
+        self._poem_type = "concrete"
 
     def add_line(self, line):
         if len(line.text) == self.line_lengths[self.next_index]:
             self.lines.append(line)
             self.next_index = (self.next_index + 1) % len(self.line_lengths)
-            if self.next_index != 0:
-                return tuple(self.lines)
+            if self.next_index != 0 and show_progress:
+                return Poem(self.poem_type, self.lines)
             else:
-                poem = tuple(self.lines)
+                lines = list(self.lines)
                 self.lines = list()
-                return poem
+                return Poem(self.poem_type, lines)
 
 
 class MultiPoet(Poet):
+
     """wraps multiple poet subclasses, feeding lines to each"""
+
     def __init__(self, poets):
         super(MultiPoet, self).__init__()
         self.poets = poets
-        self.keyed_poets = {p.identifier(): p for p in poets}
-        
+        self.keyed_poets = {p.poem_type: p for p in poets}
+        self._poem_type = "multipoet"
+
     def add_line(self, line):
         poems = [p.add_line(line) for p in self.poets]
         poems = [p for p in poems if p]
@@ -297,11 +336,11 @@ class MultiPoet(Poet):
 
     def add_poet(self, poet, key=None):
         self.poets.append(poet)
-        pkey = key or poet.identifier()
+        pkey = key or poet.poem_type
         self.keyed_poets[pkey] = poet
 
     def replace_poet(self, poet, key=None):
-        pkey = key or poet.identifier()
+        pkey = key or poet.poem_type
         existing = self.keyed_poets.get(pkey)
         if existing:
             idx = self.poets.index(existing)
@@ -312,6 +351,7 @@ class MultiPoet(Poet):
         if key in self.keyed_poets:
             self.poets.remove(self.keyed_poets[key])
             del self.keyed_poets[key]
+
 
 def main():
     pass
