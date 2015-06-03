@@ -30,7 +30,7 @@ def url_filter(text):
 
 def screenname_filter(text):
     """filters out @names"""
-    if re.search(r'@[a-zA-Z0-9]+', text):
+    if re.search(r'@[_a-zA-Z0-9]+', text):
         return True
     else:
         return False
