@@ -21,7 +21,6 @@ class Poem(object):
         super(Poem, self).__init__()
         self.poem_type = poem_type
         self.lines = lines
-        self.title = title
 
     def __str__(self):
         return str(unicode(self))
@@ -31,14 +30,13 @@ class Poem(object):
 
     def to_dict(self):
         return {
-        'poem_type': self.poem_type,
-        'lines': [{"text": l.text, "info": l.info} for l in self.lines]
+            'poem_type': self.poem_type,
+            'lines': [{"text": l.text, "info": l.info} for l in self.lines]
         }
-
-
 
     def pretty_print(self):
         return unicode(self)
+
 
 class Poet(object):
 
@@ -56,27 +54,38 @@ class Poet(object):
 
     def generate_from_source(self, source, key=None, yield_lines=False):
         for item in source:
-            if isinstance(item, basestring):
-                if isinstance(item, str):
-                    line = NormalizedLine(item.decode('utf-8'), None)
-                else:
-                    line = NormalizedLine(item, None)
-            else:
-                if not key:
-                    print('non-string sources require a key')
-                    return
-                line = NormalizedLine(item[key], item)
-
+            line = self.normalize_line(item, key)
             self.lines_seen += 1
             if yield_lines:
                 yield line.text
             poem = self.add_line(line)
+
             # multipoet returns lists of poems
             if isinstance(poem, list):
                 for p in poem:
                     yield p
             elif isinstance(poem, Poem):
                 yield poem
+
+    def add_keyed_line(self, line, key=None, yield_lines=False):
+        line = self.normalize_line(line, key)
+        self.lines_seen += 1
+        poem = self.add_line(line)
+        if poem:
+            return poem
+
+    def normalize_line(self, line, key):
+        if isinstance(line, basestring):
+            if isinstance(line, str):
+                line = NormalizedLine(line.decode('utf-8'), None)
+            else:
+                line = NormalizedLine(line, None)
+        else:
+            if not key:
+                print('non-string sources require a key')
+                return
+            line = NormalizedLine(line[key], line)
+        return line
 
     def add_line(self, line):
         # poems are tuples for a reason i should probably revisit?
@@ -99,7 +108,11 @@ class Rhymer(Poet):
         self.rhyme_count = rhyme_count
         self._poem_type = "rhyme"
 
-    def add_line(self, line):
+    def add_line(self, line, raw=False):
+        """
+        because rhymer is used by other poet subclasses
+        the raw flag returns just lines, instead of Poem objects
+        """
         end_word = rhyme.rhyme_word_if_appropriate(line.text)
         if end_word:
             end_sound = rhyme.sound_for_word(end_word)
@@ -107,7 +120,11 @@ class Rhymer(Poet):
             if self.not_homophonic(line, end_sound):
                 self.endings[end_sound].append(line)
                 if len(self.endings[end_sound]) == self.rhyme_count:
-                    to_return = tuple(self.endings[end_sound])
+                    if raw:
+                        to_return = tuple(self.endings[end_sound])
+                    else:
+                        to_return = Poem(self.poem_type,
+                                         list(self.endings[end_sound]))
                     self.endings[end_sound] = list()
                     return to_return
 
@@ -180,7 +197,7 @@ class Limericker(Poet):
         syllable_count = count_syllables(line.text)
         new_rhyme = None
         if syllable_count == 6 or syllable_count == 9:
-            new_rhyme = self.rhymers[syllable_count].add_line(line)
+            new_rhyme = self.rhymers[syllable_count].add_line(line, raw=True)
 
         if new_rhyme:
             self.lines[syllable_count].append(new_rhyme)
@@ -304,13 +321,14 @@ class Concrete(Poet):
         self.line_lengths = line_lengths
         self.next_index = 0
         self.lines = list()
+        self.show_progress = show_progress
         self._poem_type = "concrete"
 
     def add_line(self, line):
         if len(line.text) == self.line_lengths[self.next_index]:
             self.lines.append(line)
             self.next_index = (self.next_index + 1) % len(self.line_lengths)
-            if self.next_index != 0 and show_progress:
+            if self.next_index != 0 and self.show_progress:
                 return Poem(self.poem_type, self.lines)
             else:
                 lines = list(self.lines)
