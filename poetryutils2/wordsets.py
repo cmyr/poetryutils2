@@ -15,8 +15,6 @@ bitch
 bitches
 asshole
 assholes
-faggots
-faggot
 cunt
 cunts
 pussies
@@ -26,12 +24,23 @@ gay
 
 swears = set([x for x in swears.splitlines() if len(x)])
 
+bad_swears = """
+faggot
+faggots
+nigger
+niggers
+"""
+
+bad_swears = set([x for x in bad_swears.splitlines() if len(x)])
+
+swears.update(bad_swears)
 
 custom_ipa = """
 eg ˈɛɡ
 thx θˈæŋks
 xx ˈɛksˈɛks
 selfies sˈɛlfiːz
+dms dˈiːɛmz
 """
 
 custom_ipa = [tuple(x.split()) for x in custom_ipa.splitlines() if len(x)]

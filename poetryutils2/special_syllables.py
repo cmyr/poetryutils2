@@ -198,6 +198,7 @@ internet_syllables = [
 'rofl 4',
 'omg 3',
 'dm 2',
+'dms 2',
 'wtf 3',
 'idk 3',
 'idek 4',
@@ -245,7 +246,8 @@ internet_syllables = [
 'abc 3',
 'gtf 3',
 'mfs 2',
-'hehe 2'
+'hehe 2',
+'srsly 4'
 ]
 
 letters_are_words_too = [

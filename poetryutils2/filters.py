@@ -147,6 +147,10 @@ def swears_filter(leakage=0):
     kwargs = {'blacklist': wordsets.swears, 'leakage': leakage}
     return functools.partial(blacklist_check, **kwargs)
 
+def bad_swears_filter():
+    return blacklist_filter(wordsets.bad_swears)
+
+
 
 def low_letter_ratio(text, cutoff=0.8):
     t = re.sub(r'[^a-zA-Z ]', '', text)
