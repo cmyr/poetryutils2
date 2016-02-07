@@ -3,11 +3,8 @@ import re
 import os
 # from . import special_syllables
 
-import utils
+from . import utils
 from .special_syllables import special_syllables_en
-
-# special_syllables_en = special_syllables.special_syllables_en
-
 
 
 fallback_cache = dict()

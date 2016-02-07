@@ -67,7 +67,9 @@ special_syllables_orig = [
 'lb 1',
 'unexpressed 3',
 'greyish 2',
-'unostentatious 5'
+'unostentatious 5',
+'poetry 3',
+'andre 2'
 ]
 
 
@@ -247,7 +249,9 @@ internet_syllables = [
 'gtf 3',
 'mfs 2',
 'hehe 2',
-'srsly 4'
+'srsly 4',
+'idc 3',
+'tf 2'
 ]
 
 letters_are_words_too = [
