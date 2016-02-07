@@ -91,6 +91,15 @@ def ascii_filter(text):
         return True
     return False
 
+NON_ASCII_CHARS = re.compile(u'[^\u0001-\u007f]')
+
+
+def ascii_and_emoji_filter(text):
+    """ filters out non-ascii + emoji text """
+    if not NON_ASCII_CHARS.search(text):
+        return False
+    
+
 # variable filters:
 
 
