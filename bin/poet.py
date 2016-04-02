@@ -10,9 +10,6 @@ from __future__ import unicode_literals
 import sys
 import poetryutils2
 
-# import filters
-# import rhyme
-
 
 def get_source_iter(filepaths):
     """chain together input files if necessary"""
@@ -88,15 +85,11 @@ def main(args=sys.argv):
     if args.rhyme:
         poet_filters.append(poetryutils2.filters.rhyme_filter(args.rhyme))
 
-    # print(args.src)
-    # return
-    # paths = args.src
     source = get_source_iter(args.src)
     return poetryutils2.line_iter(source, poet_filters)
 
-
-        # i'm not entirely sure how to close() our input, files trapped in
-        # chain -_-`
+    # i'm not entirely sure how to close() our input, files trapped in
+    # chain -_-`
 
 # def main():
 #     pass
