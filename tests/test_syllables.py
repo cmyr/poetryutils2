@@ -350,18 +350,18 @@ should've 2
 mfs 2
 aren't 1
 anyone 3
+poetry 3
+andre 2
 """
 
 
 def test_syllables():
     tests = test_data.splitlines()
     tests = [tuple(t.strip().split()) for t in tests if len(t)]
-    tests = [(a, int(b)) for a,b in tests]
+    tests = [(a, int(b)) for a, b in tests]
     for t in tests:
         result = poetryutils2.count_syllables(t[0])
-        # print('returned %d' % result)
-        if result != t[1]:
-            print(t[0], t[1], result)
+        assert result == t[1]
 
 
 def main():

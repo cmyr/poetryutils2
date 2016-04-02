@@ -6,14 +6,18 @@ from __future__ import unicode_literals
 import re
 import os
 import sys
-try: 
-    import gdbm as dbm
+import subprocess
+
+try:
+    if (sys.version_info > (3, 0)):
+        import dbm.gnu as dbm
+    else:
+        import gdbm as dbm
     DBM_FLAGS = 'cs'
 except ImportError:
     import anydbm as dbm
     DBM_FLAGS = 'c'
 
-import cPickle as pickle
 import time
 import multiprocessing
 
@@ -26,9 +30,9 @@ from . import wordsets
 # extracting phonemes relies on espeak (http://espeak.sourceforge.net)
 # espeak is aliased to 'speak' on some systems
 ESPEAK_COMMAND_NAME = ""
-if len(os.popen3("espeak -v english-us -q --ipa %s", 'r')[1].read()):
+if subprocess.call("espeak") == 0:
     ESPEAK_COMMAND_NAME = "espeak"
-elif len(os.popen3("speak -v english-us -q --ipa %s", 'r')[1].read()):
+elif subprocess.call("speak") == 0:
     ESPEAK_COMMAND_NAME = "speak"
 else:
     raise ImportError("rhyme module requires espeak to be installed. http://espeak.sourceforge.net")
@@ -40,8 +44,8 @@ double_end_letters = set(['f', 'e', 'l', 'i', 'o', 's'])
 ipa_vowels = set("ˈˌaeiouyɑɛɪöɩɔɚɷʊʌœöøəæː")
 
 
-
 data_dir = os.path.join(utils.MODULE_PATH, 'data')
+
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
@@ -64,7 +68,7 @@ def close_db():
     global db
     if not db:
         return
-        
+
     if stats['new'] > 0 and RHYME_DEBUG:
         print('added %d new words to phoneme index' % stats['new'])
     db.close()
@@ -96,7 +100,7 @@ def rhyme_word(text, debug=False):
 def rhyme_word_if_appropriate(text):
     """returns none if last word isn't a word"""
     words = text.rstrip(' !.,?\"\'').split()
-    
+
     if not len(words):
         return None
 
@@ -162,7 +166,7 @@ def get_phonemes(word):
 
 def _adjust_phonemes(phonemes):
     """
-    some adjustments we make to ipa 
+    some adjustments we make to ipa
     """
 
     if not isinstance(phonemes, basestring):
@@ -187,7 +191,7 @@ def _end_sound(phonemes):
                 l = p.pop()
             except IndexError:
                 break
-            if l in ipa_vowels and brake == True:
+            if l in ipa_vowels and brake is True:
                 break
             elif l not in ipa_vowels:
                 brake = True
@@ -202,7 +206,7 @@ def _end_sound(phonemes):
                 l = p.pop()
             except IndexError:
                 break
-            if l not in ipa_vowels and brake == True:
+            if l not in ipa_vowels and brake is True:
                 break
             elif l in ipa_vowels:
                 brake = True
@@ -235,13 +239,16 @@ def sound_for_word(word, func=_end_sound):
         p = get_phonemes(w)
         sound = func(p)
         return sound
-    except ValueError as err:
+    except ValueError:
         return None
 
 
 def _extract_phonemes(word):
     espeak_command = "%s -v english-us -q --ipa %s" % (ESPEAK_COMMAND_NAME, word)
-    espeak_output = os.popen3(espeak_command, 'r')[1].read()
+    if (sys.version_info > (3, 0)):
+        espeak_output = subprocess.getoutput(espeak_command)
+    else:
+        espeak_output = os.popen3(espeak_command, 'r')[1].read()
     phonemes = espeak_output.strip().decode('utf8')
     stats['new'] += 1
     return word, phonemes
@@ -293,17 +300,19 @@ def words_rhyme(w1, w2):
 
     return False
 
+
 def lines_rhyme(l1, l2):
     try:
         return words_rhyme(rhyme_word(l1), rhyme_word(l2))
-    except ValueError as err:
+    except ValueError:
         print("value error:\n", l1, l2)
         return False
+
 
 def rhymes_for_word(word, wordlist):
     open_db()
     new_words = set(w for w in wordlist if w.encode('utf8') not in db)
-    
+
     if len(new_words):
         close_db()
         # because add_new opens it itself
@@ -322,13 +331,12 @@ def rhymes_for_word(word, wordlist):
     return rhymes
 
 
-
 def rhymes_for_lines(lines, textkey=None):
-    """ 
+    """
     takes an iterable containing lines of text
     returns them grouped by rhyme
     returns a list of lists of homophones
-        """
+    """
 
     open_db()
     organized_rhyme = defaultdict(list)
@@ -364,7 +372,7 @@ def _sort_rhymes(rhymes):
         sorted_rhymes[phonemes].append(line)
 
     # TODO: now check keys for homophonity
-    
+
     return sorted_rhymes.values()
 
 
@@ -388,7 +396,7 @@ def add_new_words(wordlist):
         time.sleep(1)
 
     result = result.get()
-    for w,p in result:
+    for w, p in result:
         db[w.encode('utf8')] = p.encode('utf8')
     #     modified_phonemes.add((w, adjust_phonemes(p)))
     print('finished in %0.2f' % (time.time() - start))
@@ -406,8 +414,6 @@ def UPDATE_PHONEME_LIST(phonemes=wordsets.custom_ipa):
     close_db()
 
 
-
-
 def main():
     pass
     import argparse
@@ -420,8 +426,6 @@ def main():
 
     if args.update:
         UPDATE_PHONEME_LIST()
-
-    
 
 
 if __name__ == "__main__":
