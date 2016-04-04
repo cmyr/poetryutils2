@@ -2,7 +2,21 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import poetryutils2
+from poetryutils2 import rhyme
+
+
+rhymer_en = rhyme.rhymer_for_language('en')
+
+
+def test_espeak():
+    cmd = rhyme._get_espeak_command()
+    assert cmd is not None
+
+
+def test_get_phonemes():
+    assert rhymer_en
+    with rhymer_en as r:
+        assert r.get_phonemes('hello') == 'həlˈoʊ'
 
 
 def test_end_words():
@@ -10,17 +24,17 @@ def test_end_words():
     matttt mat
     lolllllll loll
     #WhyLiveee live
-    meleeee melee
-    suxxxx69 sux"""
+    meleeee melee"""
 
     end_tests = [t.split() for t in end_tests.splitlines() if len(t)]
 
-    for t in end_tests:
-        print('t: %s' % t)
-        r = poetryutils2.rhyme.rhyme_word(t[0])
-        assert r == t[1], print(t, r)
+    with rhymer_en as ren:
+        for t in end_tests:
+            print('t: %s' % t)
+            r = ren._rhyme_word(t[0])
+            assert r == t[1], print(t, r)
 
-    print('passed end sound test')
+        assert ren._rhyme_word('suxxxx69') is None
 
 
 def end_sound_tests():
@@ -36,12 +50,11 @@ def end_sound_tests():
      hˈuːɾɪnˌæni i"""
 
     sound_tests = [tuple(x.split()) for x in sound_tests.splitlines() if len(x)]
-    for t in sound_tests:
-        s = poetryutils2.rhyme._end_sound(t[0])
-        assert s == t[1], '%s %s %s' % (t[0], t[1], s)
+    with rhymer_en as r:
+        for t in sound_tests:
+            s = r.sound_for_word(t[0])
+            assert s == t[1], '%s %s %s' % (t[0], t[1], s)
 
 
-def test_espeak():
-    poetryutils2.rhyme.open_db()
-    assert poetryutils2.rhyme._extract_phonemes('hello')[1] == 'həlˈoʊ'
-    poetryutils2.rhyme.close_db()
+def test_rhyme_word():
+        pass
