@@ -6,27 +6,27 @@ from __future__ import unicode_literals
 import re
 import os
 import sys
-import subprocess
+import functools
+import multiprocessing
+import time
 
 try:
     if (sys.version_info > (3, 0)):
         import dbm.gnu as dbm
+        DBM_V = 'dbm.gnu'
     else:
         import gdbm as dbm
+        DBM_V = 'gdbm'
     DBM_FLAGS = 'cs'
 except ImportError:
     import anydbm as dbm
+    DBM_V = 'anydbm'
     DBM_FLAGS = 'c'
 
+from . import utils, espeak_wrapper
 
-from . import utils
+print('using %s for dbm' % DBM_V, file=sys.stderr)
 
-
-def isstring(value):
-    if (sys.version_info > (3, 0)):
-        return isinstance(value, str)
-    else:
-        return isinstance(value, basestring)
 
 double_end_letters = set(['f', 'e', 'l', 'i', 'o', 's'])
 ipa_vowels = set("ˈˌaeiouyɑɛɪöɩɔɚɷʊʌœöøəæː")

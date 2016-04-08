@@ -1,12 +1,34 @@
 from __future__ import print_function
 from __future__ import unicode_literals
-import re
+
+import sys
 import os
+import re
 import time
-# import Stemmer
+
 
 MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
+RESOURCES_DIR = os.path.join(
+    MODULE_PATH,
+    os.pardir,
+    'resources')
+
 # helpers etc
+
+
+def isstring(value):
+    if (sys.version_info > (3, 0)):
+        return isinstance(value, str)
+    else:
+        return isinstance(value, basestring)
+
+
+def isunicode(value):
+    if (sys.version_info > (3, 0)):
+        return isinstance(value, str)
+    else:
+        return isinstance(value, unicode)
+
 
 def _strip_string(text):
     """
@@ -27,10 +49,10 @@ HASHTAG_SUB2 = re.compile(r'([a-z0-9])([A-Z])')
 
 
 def fix_hashtags(text):
-    if not isinstance(text, basestring):
+    if not isstring(text):
         print(text)
         return False
-        
+
     hashtags = HASHTAG_RE.findall(text)
     for h in hashtags:
         fix = HASHTAG_SUB1.sub(r'\1 \2', h)
@@ -40,6 +62,7 @@ def fix_hashtags(text):
 
 # def sub_non_latin_chars(text):
 #     return re.sub(ur'[\u00FF-\u024F]', '', text)
+
 
 def _find_hashtags(text):
     hashtags = re.findall(r'#(?:[A-Z][a-z]+)+', text)
@@ -52,6 +75,7 @@ def fix_contractions(text, debug=False):
     text = re.sub(r"([a-zA-Z])n't", lambda m: '%s not' % m.group(1), text)
     text = re.sub(r"([a-zA-Z])'ve", lambda m: '%s have' % m.group(1), text)
     text = re.sub(r"([a-zA-Z])'ll", lambda m: '%s will' % m.group(1), text)
+    return text
 
 
 def synonyms(word):
@@ -68,101 +92,47 @@ def synonyms(word):
     return syns
 
 
-def wordlist():
-    # if not hasattr(wordlist, "words"):
+def wordlist_en():
+    words = set()   
     try:
         import nltk
-        words = set([w.lower().decode('utf8') for w in nltk.corpus.words.words()])
-        filepath = os.path.join(MODULE_PATH, 'words.txt')
-        with open(filepath) as f:
-            more_words = [l.decode('utf8') for l in f.read().splitlines()]
-            words.update(set(more_words))
-    except ImportError as err:
-        words = list()
+        words.update(
+            w.decode('utf-8').lower().strip() for w in nltk.corpus.words.words())
+    except ImportError:
+        print('failed to import nltk, using shorter english wordlist', file=sys.stderr)
+    filepath = os.path.join(RESOURCES_DIR, 'words.txt')
+    with open(filepath) as f:
+        words.update(
+            l.decode('utf-8').lower().strip() for l in f.read().splitlines())
 
+    print('loaded %d words (en)' % len(words))
     return words
 
 
-# STEMMER = Stemmer.Stemmer('english')
-
-# So this is kind of messy, and doesn't work very well right now.
-# Basically: I want to do 'realness checking' to figure out
-# whether a word is a real word or not. This doesn't work using just a look-up,
-# because gerunds and plurals etcetera frequently aren't on wordlists.
-# I was trying to use a stemmer, but then the *stems* are often
-# not real words, either. 
-
-# possible solutions: 
-#     - some sort of custom stemmer?
-#     - some sort of thing that converts stems back into words
-#     - using some sort of spell-checking API
-#     - getting a better wordlist?
-#     - etcetera.
-
-#     I'm not sure where to go with this, right now.
+def wordlist_fr():
+    words = set()
+    filepath = os.path.join(RESOURCES_DIR, 'mots_fr.txt')
+    with open(filepath) as f:
+        words.update(
+            l.decode('utf-8').lower().strip() for l in f.read().splitlines())
+    print('loaded %d words (fr)' % len(words))
+    return words
 
 
-def is_real_word(word, debug=False):
-    assert isinstance(word, unicode), 'word "%s" not unicode' % word
-    if not hasattr(is_real_word, "words"):
-        is_real_word.words = wordlist()
-        print('loaded %d words' % len(is_real_word.words))
-
-    if word in is_real_word.words:
-        return True
-
-  # now this is a bunch of stemming handlers for plurals and tenses etc.
-   
-   # ------option 1 ------- #
-
-    # if word[-1] == 's':
-    #     # cheap handling of plurals not in our dict
-    #     return is_real_word(word[:-1])
-    # elif word[-1] in {'g', 'd', 's', 'r', 't'}:
-    #     # cheap handling of gerunds not in our dict.
-    #     # this won't do great for nouns ending in e
-    #     if debug:
-    #         print('degerunding: %s' % word)
-    #     if re.search(r'ing$', word):
-    #         word = word[:-3]
-    #         if debug:
-    #             print('trying %s' % word)
-    #         if is_real_word(word):
-    #             if debug:
-    #                 print('success')
-    #             return True
-    #         else:
-    #             word = word + 'e'
-    #             if debug:
-    #                 print('trying %s' % word)
-    #             if is_real_word(word):
-    #                 if debug:
-    #                     print('success')
-    #                 return True
-
-    # ------option 2 ------- #
-
-        # stem = STEMMER.stemWord(word)
-        # if stem != word:
-        #     result = is_real_word(stem)
-        #     if result:
-        #         return True
-
-        #     if stem[-1] == 'i':
-        #         # sacrificing 'skiing' for the common good
-        #         stem = stem[:-1] + 'y'
-        #         return is_real_word(stem)
-
-        #     stem += 'e'
-        #     result = is_real_word(stem)
-        #     if result:
-        #         return True
-        #     if debug:
-        #         print('trying stem %s for word %s' % (stem, word))
+def load_words(lang):
+    if lang == 'en':
+        return wordlist_en()
+    elif lang == 'fr':
+        return wordlist_fr()
 
 
-    # don't comment me
-    return False
+def is_real_word(word, lang='en', debug=False):
+    assert isunicode(word), 'word "%s" not unicode' % word
+    if not hasattr(is_real_word, lang):
+        setattr(is_real_word, lang, load_words(lang))
+
+    wordlist = getattr(is_real_word, lang)
+    return word in wordlist
 
 
 def lines_from_file(filepath):
@@ -197,7 +167,7 @@ def line_iter(source, filters, key=None, delay=0):
         if isinstance(item, basestring):
             line = unicodify(item)
         else:
-            assert key != None, 'non-string sources require a key'
+            assert key is None, 'non-string sources require a key'
             line = unicodify(item[key])
 
         if filter_line(line, filters):
@@ -217,13 +187,14 @@ def unicodify(item):
 def lines(source, filters, key=None):
     return [l for l in line_iter(source, filters, key)]
 
+
 def filter_line(line, filters):
     for f in filters:
         if f(line):
             return False
 
     return True
-    
+
 
 def main():
     pass
