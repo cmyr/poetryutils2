@@ -18,14 +18,11 @@ passes, or when it fails?
 """
 
 # simple filters:
+url_pat = re.compile(r'https?://[a-zA-Z0-9/\.]+')
 
 
-def url_filter(text):
-    """filters out urls"""
-    if re.search(r'http://[a-zA-Z0-9\./]*\w', text):
-        return True
-    else:
-        return False
+def url_filter(inp):
+    return url_pat.search(inp) is not None
 
 
 def screenname_filter(text):
