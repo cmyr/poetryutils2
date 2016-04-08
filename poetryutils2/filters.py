@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from __future__ import print_function
 from __future__ import unicode_literals
 
@@ -95,7 +97,6 @@ def ascii_and_emoji_filter(text):
     """ filters out non-ascii + emoji text """
     if not NON_ASCII_CHARS.search(text):
         return False
-    
 
 # variable filters:
 
@@ -167,7 +168,7 @@ def bad_swears_filter():
 
 
 def low_letter_ratio(text, cutoff=0.8):
-    t = re.sub(r'[^a-zA-Z ]', '', text)
+    t = re.sub(r'[^a-zéèêôçï]', '', text, flags=re.I)
     try:
         if (float(len(t)) / len(text)) < cutoff:
             return True
@@ -333,7 +334,7 @@ def emoticons(text):
 def _convert_custom_regex(in_re):
     """
     takes a string in our custom regex format
-    and converts it to acceptable regex 
+    and converts it to acceptable regex
     """
     regex = re.sub(r'([^\\])(?:~)([a-zA-Z]*)',
                    lambda m: '%s(%s)' % (
