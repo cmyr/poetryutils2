@@ -39,35 +39,22 @@ if not os.path.exists(data_dir):
 
 dbpath = os.path.join(data_dir, 'phonemes.db')
 
-# extracting phonemes relies on espeak (http://espeak.sourceforge.net)
-# espeak is aliased to 'speak' on some systems
-
 __rhymers = {}
 
 
-def rhymer_for_language(language):
-    if language == 'en':
+def rhymer_for_language(lang):
+    if lang == 'en':
         if not __rhymers.get('en'):
-            __rhymers['en'] = Rhymer(data_dir, language, dbpath)
+            __rhymers['en'] = PhonemeRhymer(data_dir, lang, dbpath)
         return __rhymers['en']
+    elif lang == 'fr':
+        if not __rhymers.get('fr'):
+            __rhymers['fr'] = PhonemeRhymer(
+                data_dir, lang, os.path.join(data_dir, 'phonemes_fr.db'))
+        return __rhymers['fr']
 
 
-def _get_espeak_command():
-    if not hasattr(_get_espeak_command, 'ESPEAK_COMMAND_NAME'):
-        cmd = None
-        if subprocess.call("espeak") == 0:
-            cmd = 'espeak'
-        elif subprocess.call("speak") == 0:
-            cmd = "speak"
-        else:
-            raise ImportError(
-                "rhyme module requires espeak to be installed. http://espeak.sourceforge.net")
-
-        setattr(_get_espeak_command, 'ESPEAK_COMMAND_NAME', cmd)
-    return getattr(_get_espeak_command, 'ESPEAK_COMMAND_NAME')
-
-
-class Rhymer(object):
+class PhonemeRhymer(object):
     """docstring for RhymeDB"""
 
     ESPEAK_LANG_TABLE = {
@@ -75,45 +62,47 @@ class Rhymer(object):
         'fr': 'fr'
         }
 
-    ESPEAK_COMMAND_NAME = _get_espeak_command()
-
-    def __init__(self, basepath, language, dbpath=None):
-        super(Rhymer, self).__init__()
+    def __init__(self, basepath, lang, dbpath=None):
+        super(PhonemeRhymer, self).__init__()
         self.basepath = basepath
-        self.language = language
-        self.dbpath = dbpath or os.path.join(self.basepath, 'phonemes_%s.db' % self.language)
+        self.lang = lang
+        self.dbpath = dbpath or os.path.join(self.basepath, 'phonemes_%s.db' % self.lang)
         self.new_words = 0
         self.db = None
 
-    def __enter__(self):
+    def __len__(self):
+        self.open_db()
+        dblen = len(self.db)
+        self.close_db()
+        return dblen
+
+    def open_db(self):
         self.db = dbm.open(self.dbpath, DBM_FLAGS)
         self.new_words = 0
-        return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        print('added %d new words to %s' % (self.new_words, self.dbpath), file=sys.stderr)
-        self.db.close()
-        self.db = None
+    def close_db(self):
+        if self.db is not None:
+            self.db.close()
+            self.db = None
 
-    def __getitem__(self, key):
-        assert self.db is not None, 'db should only be access in "with" statement'
-        assert isstring(key), 'key must be string'
-        key = key.encode('utf-8')
+    def get_phonemes(self, word):
+        '''returns the IPA phonemes for word, calculating them if needed'''
+        assert utils.isstring(word), 'key must be string'
+        word = self._normalize_word(word)
+        word = word.encode('utf-8')
         try:
-            return self.db[key].decode('utf-8')
-        except KeyError:
-            return None
-
-    def __setitem__(self, key, value):
-        assert self.db is not None, 'db should only be accessed in "with" statement'
-        assert isstring(key), 'key must be string'
-        assert isstring(value), 'value must be string not %s' % type(value)
-        key = key.encode('utf-8')
-        self.db[key] = value.encode('utf-8')
+            self.open_db()
+            if word not in self.db:
+                _, phonemes = espeak_wrapper.extract_phonemes(word, self.lang)
+                self.db[word] = self._adjust_phonemes(phonemes).encode('utf-8')
+            word = self.db[word].decode('utf-8')
+            return word
+        finally:
+            self.close_db()
 
     def is_rhyme(self, text1, text2):
-        text1 = self._rhyme_word(text1)
-        text2 = self._rhyme_word(text2)
+        text1 = self.rhyme_word(text1)
+        text2 = self.rhyme_word(text2)
 
         p1 = self.get_phonemes(text1)
         p2 = self.get_phonemes(text2)
@@ -130,29 +119,12 @@ class Rhymer(object):
         p = self.get_phonemes(word)
         return self._end_sound(p)
 
-    def get_phonemes(self, word):
-        word = self._normalize_word(word)
-        p = self[word]
-        if not p:
-            p = self.extract_phonemes(word)
-            self[word] = p
-        return p
-
-    def extract_phonemes(self, word):
-        cmd = [
-            self.ESPEAK_COMMAND_NAME, '-v',
-            self.ESPEAK_LANG_TABLE[self.language],
-            '-q', '--ipa', word]
-        output = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        phonemes = output.stdout.read().decode('utf-8').strip()
-        return self._adjust_phonemes(phonemes)
-
     def _adjust_phonemes(self, phonemes):
         """
         some adjustments we make to ipa
         """
 
-        if not isstring(phonemes):
+        if not utils.isstring(phonemes):
             print('bad phoneme data:', type(phonemes))
             return
         phonemes = re.sub(r'[ˈˌ]', '', phonemes, flags=re.UNICODE)
@@ -160,7 +132,7 @@ class Rhymer(object):
 
         return phonemes
 
-    def _rhyme_word(self, text):
+    def rhyme_word(self, text):
         """returns none if last word isn't a word"""
         words = text.rstrip(' !.,?\"\'').split()
         if len(words):
@@ -187,8 +159,8 @@ class Rhymer(object):
                     word = re.sub(pattern, repl, word)
 
                     # we want melee not mele, but home not homee:
-                    if not utils.is_real_word(word):
-                        if utils.is_real_word(word[:-1]):
+                    if not utils.is_real_word(word, self.lang):
+                        if utils.is_real_word(word[:-1], self.lang):
                             return word[:-1]
                 else:
                     # matt == mat, hatt == hat, e.g.
@@ -248,7 +220,36 @@ class Rhymer(object):
                 return True
 
         return False
-    # def add_new_words(self, wordlist):
+
+    def add_new_words(self, wordlist):
+        """
+        add new words to our lookup table
+        """
+        self.open_db()
+        try:
+            wordlist = [self._normalize_word(w) for w in wordlist 
+                        if w.encode('utf-8') not in self.db]
+            num_words = len(wordlist)
+            print('extracting phonemes for %d new words' % num_words)
+            start = time.time()
+            pool = multiprocessing.Pool(4)
+            pool_func = functools.partial(espeak_wrapper.extract_phonemes, lang=self.lang)
+            result = pool.map_async(pool_func, wordlist)
+
+            # wait for result
+            while True:
+                if result.ready():
+                    break
+                else:
+                    print("%d/%d\r" % (num_words, result._number_left), file=sys.stdout)
+                    sys.stdout.flush()
+                    time.sleep(1)
+
+            for w, p in result.get():
+                self.db[w.encode('utf-8')] = self._adjust_phonemes(p).encode('utf-8')
+            print('finished in %0.2f' % (time.time() - start))
+        finally:
+            self.close_db()
 
 
 # def rhymes_for_lines(lines, textkey=None):
@@ -294,33 +295,6 @@ class Rhymer(object):
 #     # TODO: now check keys for homophonity
 
 #     return sorted_rhymes.values()
-
-
-# def add_new_words(wordlist):
-#     """
-#     add new words to our lookup table
-#     """
-#     open_db()
-#     num_words = len(wordlist)
-#     print('extracting phonemes for %d new words' % num_words)
-#     start = time.time()
-#     pool = multiprocessing.Pool(4)
-#     result = pool.map_async(_extract_phonemes, wordlist)
-
-#     while True:
-#         if result.ready():
-#             break
-#         status = "%d/%d\r" % (num_words, result._number_left)
-#         sys.stdout.write(status)
-#         sys.stdout.flush()
-#         time.sleep(1)
-
-#     result = result.get()
-#     for w, p in result:
-#         db[w.encode('utf8')] = p.encode('utf8')
-#     #     modified_phonemes.add((w, adjust_phonemes(p)))
-#     print('finished in %0.2f' % (time.time() - start))
-#     close_db()
 
 
 # def UPDATE_PHONEME_LIST(phonemes=wordsets.custom_ipa):

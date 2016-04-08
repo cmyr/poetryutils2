@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 from collections import defaultdict, Counter, namedtuple
 import sys
 import re
+import functools
 
-from textblob import TextBlob
 from . import rhyme
 from .syllables import count_syllables
 
@@ -23,7 +23,7 @@ class Poem(object):
         self.lines = lines
 
     def __str__(self):
-        return str(unicode(self))
+        return str(unicode(self).encode('utf-8'))
 
     def __unicode__(self):
         return "\n" + "\n".join(l.text for l in self.lines) + "\n"
@@ -102,20 +102,24 @@ class Rhymer(Poet):
     our only basic worry is quality checking our rhymes?
     """
 
-    def __init__(self, debug=False, rhyme_count=2):
+    def __init__(self, debug=False, rhyme_count=2, lang='en'):
         super(Rhymer, self).__init__(debug)
         self.endings = defaultdict(list)
         self.rhyme_count = rhyme_count
         self._poem_type = "rhyme"
+        self.language = lang
+        self.rhyme_finder = rhyme.rhymer_for_language(self.language)
 
     def add_line(self, line, raw=False):
         """
         because rhymer is used by other poet subclasses
         the raw flag returns just lines, instead of Poem objects
         """
-        end_word = rhyme.rhyme_word_if_appropriate(line.text)
+        # with self.rhyme_finder as rf:
+        #     end_sound = rf.
+        end_word = self.rhyme_finder.rhyme_word(line.text)
         if end_word:
-            end_sound = rhyme.sound_for_word(end_word)
+            end_sound = self.rhyme_finder.sound_for_word(end_word)
 
             if self.not_homophonic(line, end_sound):
                 self.endings[end_sound].append(line)
@@ -130,7 +134,7 @@ class Rhymer(Poet):
 
     def not_homophonic(self, line, end_sound):
         for other_line in self.endings[end_sound]:
-            if not rhyme.lines_rhyme(line.text, other_line.text):
+            if not self.rhyme_finder.is_rhyme(line.text, other_line.text):
                 # print('homophones:\n%s\n%s' % (line, other_line))
                 return False
 
@@ -146,9 +150,11 @@ class Coupler(Poet):
 
     """finds rhyming couplets"""
 
-    def __init__(self):
+    def __init__(self, lang='en'):
         super(Coupler, self).__init__()
-        self.rhymers = defaultdict(Rhymer)
+        self.lang = lang
+        _Rhymer = functools.partial(Rhymer, lang=self.lang)
+        self.rhymers = defaultdict(_Rhymer)
         self._poem_type = "couplet"
 
     def add_line(self, line):
@@ -187,10 +193,11 @@ class Limericker(Poet):
 
     """finds limericks"""
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, lang='en'):
         super(Limericker, self).__init__(debug)
         self.lines = defaultdict(list)
-        self.rhymers = {9: Rhymer(rhyme_count=3), 6: Rhymer()}
+        self.lang = lang
+        self.rhymers = {9: Rhymer(rhyme_count=3, lang=self.lang), 6: Rhymer(lang=self.lang)}
         self._poem_type = "limerick"
 
     def add_line(self, line):
@@ -207,7 +214,7 @@ class Limericker(Poet):
         if len(self.lines[9]) and len(self.lines[6]):
             for niner in self.lines[9]:
                 for sixer in self.lines[6]:
-                    if not rhyme.lines_rhyme(niner[0].text, sixer[0].text):
+                    if not self.rhymers[9].rhyme_finder.is_rhyme(niner[0].text, sixer[0].text):
                         self.lines[9].remove(niner)
                         self.lines[6].remove(sixer)
                         lines = [
@@ -220,6 +227,22 @@ class Limericker(Poet):
         for count in (6, 9):
             print("%d syllable rhymes:" % count)
             self.rhymers[count].debug_info()
+
+# class Villaneller(Poet):
+#     """ finds villanelles """
+#     def __init__(self):
+#         super(Villaneller, self).__init__()
+#         self.lines = defaultdict(list)
+#         self.rhymer = Rhymer(rhyme_count=7)
+
+#     def add_line(self, line):
+#         new_rhyme = False
+#         syllable_count = count_syllables(line.text)
+#         if syllable_count == 10:
+#             new_rhyme = self.rhymer.add_line(line, raw=True)
+
+#         if new_rhyme:
+
 
 
 class Haikuer(Poet):
@@ -265,6 +288,16 @@ class Mimic(Poet):
     """docstring for Mimic"""
 
     def __init__(self, poem):
+        try:
+            TextBlob()
+        except NameError:
+            try:
+                from textblob import TextBlob
+            except ImportError:
+                print('use of mimic requires textblob module.')
+                sys.exit(1)
+
+
         super(Mimic, self).__init__()
         self.poem = poem
         self.normalized = self.normalize_poem(poem)
