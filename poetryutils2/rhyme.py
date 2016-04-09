@@ -32,26 +32,21 @@ double_end_letters = set(['f', 'e', 'l', 'i', 'o', 's'])
 ipa_vowels = set("ˈˌaeiouyɑɛɪöɩɔɚɷʊʌœöøəæː")
 
 
-data_dir = os.path.join(utils.MODULE_PATH, 'data')
+PHONEME_DATA_DIR = os.path.join(utils.RESOURCES_DIR, 'phoneme_data')
 
-if not os.path.exists(data_dir):
-    os.makedirs(data_dir)
-
-dbpath = os.path.join(data_dir, 'phonemes.db')
+if not os.path.exists(PHONEME_DATA_DIR):
+    os.makedirs(PHONEME_DATA_DIR)
 
 __rhymers = {}
 
 
 def rhymer_for_language(lang):
-    if lang == 'en':
-        if not __rhymers.get('en'):
-            __rhymers['en'] = PhonemeRhymer(data_dir, lang, dbpath)
-        return __rhymers['en']
-    elif lang == 'fr':
-        if not __rhymers.get('fr'):
-            __rhymers['fr'] = PhonemeRhymer(
-                data_dir, lang, os.path.join(data_dir, 'phonemes_fr.db'))
-        return __rhymers['fr']
+    if lang in ('en', 'fr'):
+        if not __rhymers.get(lang):
+            __rhymers[lang] = PhonemeRhymer(PHONEME_DATA_DIR, lang)
+        return __rhymers[lang]
+    else:
+        raise Exception('lang %s is unsupported' % lang)
 
 
 class PhonemeRhymer(object):
@@ -227,7 +222,7 @@ class PhonemeRhymer(object):
         """
         self.open_db()
         try:
-            wordlist = [self._normalize_word(w) for w in wordlist 
+            wordlist = [self._normalize_word(w) for w in wordlist
                         if w.encode('utf-8') not in self.db]
             num_words = len(wordlist)
             print('extracting phonemes for %d new words' % num_words)

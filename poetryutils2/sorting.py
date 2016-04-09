@@ -42,10 +42,11 @@ class Poet(object):
 
     """Poet is an abstract superclass for poem generators."""
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, lang='en'):
         super(Poet, self).__init__()
         self.lines_seen = 0
         self.debug = debug
+        self.lang = lang
         self._poem_type = "base poem"
 
     @property
@@ -58,7 +59,7 @@ class Poet(object):
             self.lines_seen += 1
             if yield_lines:
                 yield line.text
-            poem = self.add_line(line)
+            poem = self._add_line(line)
 
             # multipoet returns lists of poems
             if isinstance(poem, list):
@@ -70,7 +71,7 @@ class Poet(object):
     def add_keyed_line(self, line, key=None, yield_lines=False):
         line = self.normalize_line(line, key)
         self.lines_seen += 1
-        poem = self.add_line(line)
+        poem = self._add_line(line)
         if poem:
             return poem
 
@@ -87,7 +88,7 @@ class Poet(object):
             line = NormalizedLine(line[key], line)
         return line
 
-    def add_line(self, line):
+    def _add_line(self, line):
         # poems are tuples for a reason i should probably revisit?
         return Poem(self.poem_type, [line])
 
@@ -102,21 +103,18 @@ class Rhymer(Poet):
     our only basic worry is quality checking our rhymes?
     """
 
-    def __init__(self, debug=False, rhyme_count=2, lang='en'):
-        super(Rhymer, self).__init__(debug)
+    def __init__(self, rhyme_count=2, **kwargs):
+        super(Rhymer, self).__init__(**kwargs)
         self.endings = defaultdict(list)
         self.rhyme_count = rhyme_count
         self._poem_type = "rhyme"
-        self.language = lang
-        self.rhyme_finder = rhyme.rhymer_for_language(self.language)
+        self.rhyme_finder = rhyme.rhymer_for_language(self.lang)
 
-    def add_line(self, line, raw=False):
+    def _add_line(self, line, raw=False):
         """
         because rhymer is used by other poet subclasses
         the raw flag returns just lines, instead of Poem objects
         """
-        # with self.rhyme_finder as rf:
-        #     end_sound = rf.
         end_word = self.rhyme_finder.rhyme_word(line.text)
         if end_word:
             end_sound = self.rhyme_finder.sound_for_word(end_word)
@@ -157,9 +155,9 @@ class Coupler(Poet):
         self.rhymers = defaultdict(_Rhymer)
         self._poem_type = "couplet"
 
-    def add_line(self, line):
+    def _add_line(self, line):
         syllable_count = count_syllables(line.text)
-        return self.rhymers[syllable_count].add_line(line)
+        return self.rhymers[syllable_count]._add_line(line)
 
 
 class SyllablePoet(Poet):
@@ -175,7 +173,7 @@ class SyllablePoet(Poet):
         self.lines = defaultdict(list)
         self._poem_type = "syllable poem"
 
-    def add_line(self, line):
+    def _add_line(self, line):
         syllable_count = count_syllables(line.text)
         if syllable_count in self.desired_syllables_set:
             self.lines[syllable_count].append(line)
@@ -193,18 +191,17 @@ class Limericker(Poet):
 
     """finds limericks"""
 
-    def __init__(self, debug=False, lang='en'):
-        super(Limericker, self).__init__(debug)
+    def __init__(self, **kwargs):
+        super(Limericker, self).__init__(**kwargs)
         self.lines = defaultdict(list)
-        self.lang = lang
         self.rhymers = {9: Rhymer(rhyme_count=3, lang=self.lang), 6: Rhymer(lang=self.lang)}
         self._poem_type = "limerick"
 
-    def add_line(self, line):
+    def _add_line(self, line):
         syllable_count = count_syllables(line.text)
         new_rhyme = None
         if syllable_count == 6 or syllable_count == 9:
-            new_rhyme = self.rhymers[syllable_count].add_line(line, raw=True)
+            new_rhyme = self.rhymers[syllable_count]._add_line(line, raw=True)
 
         if new_rhyme:
             self.lines[syllable_count].append(new_rhyme)
@@ -235,14 +232,13 @@ class Limericker(Poet):
 #         self.lines = defaultdict(list)
 #         self.rhymer = Rhymer(rhyme_count=7)
 
-#     def add_line(self, line):
+#     def _add_line(self, line):
 #         new_rhyme = False
 #         syllable_count = count_syllables(line.text)
 #         if syllable_count == 10:
-#             new_rhyme = self.rhymer.add_line(line, raw=True)
+#             new_rhyme = self.rhymer._add_line(line, raw=True)
 
 #         if new_rhyme:
-
 
 
 class Haikuer(Poet):
@@ -257,7 +253,7 @@ class Haikuer(Poet):
         self.item_lookup = dict()
         self._poem_type = "haiku"
 
-    def add_line(self, line):
+    def _add_line(self, line):
         if self.debug:
             sys.stdout.write("seen %d\r" % self.lines_seen)
             sys.stdout.flush()
@@ -297,7 +293,6 @@ class Mimic(Poet):
                 print('use of mimic requires textblob module.')
                 sys.exit(1)
 
-
         super(Mimic, self).__init__()
         self.poem = poem
         self.normalized = self.normalize_poem(poem)
@@ -319,7 +314,7 @@ class Mimic(Poet):
         pos = [p for l in pos for w, p in l]
         return pos
 
-    def add_line(self, line):
+    def _add_line(self, line):
         tags = TextBlob(line.text).tags
         for word, tag in tags:
             if tag in self.looking_for_pos:
@@ -328,10 +323,10 @@ class Mimic(Poet):
 
     def handle_new_word(self, tagged_word):
         i = self.pos_map.index(tagged_word[1])
-        assert i != None, "failed to find %s in pos map" % tagged_word[1]
+        assert i is not None, "failed to find %s in pos map" % tagged_word[1]
         self.pos_map[i] = None
         self.found_words[i] = tagged_word[0]
-        self.looking_for_pos = set(i for i in self.pos_map if i != None)
+        self.looking_for_pos = set(i for i in self.pos_map if i is not None)
 
     def check_for_art(self):
         if len(self.looking_for_pos) == 0:
@@ -357,7 +352,7 @@ class Concrete(Poet):
         self.show_progress = show_progress
         self._poem_type = "concrete"
 
-    def add_line(self, line):
+    def _add_line(self, line):
         if len(line.text) == self.line_lengths[self.next_index]:
             self.lines.append(line)
             self.next_index = (self.next_index + 1) % len(self.line_lengths)
@@ -379,8 +374,8 @@ class MultiPoet(Poet):
         self.keyed_poets = {p.poem_type: p for p in poets}
         self._poem_type = "multipoet"
 
-    def add_line(self, line):
-        poems = [p.add_line(line) for p in self.poets]
+    def _add_line(self, line):
+        poems = [p._add_line(line) for p in self.poets]
         poems = [p for p in poems if p]
         if len(poems):
             return poems
