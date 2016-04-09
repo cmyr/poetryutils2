@@ -18,3 +18,10 @@ def test_real_words():
     assert not utils.is_real_word('vacance', 'en')
     assert not utils.is_real_word('cow', 'fr')
     assert utils.is_real_word('vacance', 'fr')
+
+
+def test_syllable_string_parsing():
+    assert utils.parse_range_string('1,2') == (1, 2)
+    assert utils.parse_range_string('1-4') == (1, 2, 3, 4)
+    assert utils.parse_range_string('4,5,10') == (4, 5, 10)
+    assert utils.parse_range_string('4-5, 10') == (4, 5, 10)

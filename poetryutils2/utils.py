@@ -78,6 +78,23 @@ def fix_contractions(text, debug=False):
     return text
 
 
+def parse_range_string(range_string):
+    """
+    parses strings that represent a range of ints.
+    """
+    range_string = range_string.replace(' ', '')
+    if re.search(r'[^,0-9\-]', range_string):
+        raise ValueError("invalid characters in range")
+
+    result = set(int(x) for x in re.findall(r'[0-9]+', range_string))
+    ranges = re.findall(r'([0-9]+)\-([0-9]+)', range_string)
+    if len(ranges):
+        for r in ranges:
+            result.update([x for x in range(int(r[0]), int(r[1]) + 1)])
+
+    return tuple(sorted(result))
+
+
 def synonyms(word):
     syns = set([word])
     try:
@@ -93,7 +110,7 @@ def synonyms(word):
 
 
 def wordlist_en():
-    words = set()   
+    words = set()
     try:
         import nltk
         words.update(
@@ -126,7 +143,7 @@ def load_words(lang):
         return wordlist_fr()
 
 
-def is_real_word(word, lang='en', debug=False):
+def is_real_word(word, lang='en'):
     assert isunicode(word), 'word "%s" not unicode' % word
     if not hasattr(is_real_word, lang):
         setattr(is_real_word, lang, load_words(lang))

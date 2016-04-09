@@ -98,3 +98,12 @@ def test_line_iter():
     filts = [filters.title_case_filter, filters.screenname_filter, filters.hashtag_filter]
     passed = list(utils.line_iter(lines, filts))
     assert len(passed) == 1
+
+
+def test_real_word_ratio():
+    words = "hello hi alskdfjsdlkfj"
+    words_fr = "quelconque mouvoir sdfkjlsdf"
+    assert filters.real_word_ratio_filter(0.5, 'en', True)(words)
+    assert not filters.real_word_ratio_filter(0.7, 'en', True)(words)
+    assert filters.real_word_ratio_filter(0.5, 'fr', True)(words_fr)
+    assert not filters.real_word_ratio_filter(0.7, 'fr', True)(words_fr)

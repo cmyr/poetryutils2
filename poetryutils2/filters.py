@@ -84,42 +84,6 @@ def ascii_filter(text):
     return True
 
 
-# variable filters:
-
-
-# def whitelist_check(text, whitelist, debug=False):
-#     """filter text that contains a word on the whitelist"""
-#     hits = 0
-#     for word in (utils._strip_string(w) for w in text.split()):
-#         if word in whitelist:
-#             if debug:
-#                 print(word)
-#             hits += 1
-#             if hits == 1:
-#                 continue
-#             # number of matches increases chances we'll approve
-#             # basically 1 hit has a 1/3 chance, 3 hits is a sure thing
-#             chance = random.randrange(0, 100)
-#             if chance > (33 * hits):
-#                 return False
-
-#     return True
-
-
-# def whitelist_filter(whitelist):
-#     f = functools.partial(whitelist_check, **{'whitelist': whitelist})
-#     f.__doc__ = 'whitelist words: %s' % repr(whitelist)
-#     return f
-
-
-# def topic_syria_filter():
-#     return whitelist_filter(wordsets.syria)
-
-
-# def topic_ukraine_filter():
-#     return whitelist_filter(wordsets.ukraine)
-
-
 def blacklist_check(text, blacklist, leakage=0):
     """filter words from a blacklist"""
     assert 0.0 <= leakage < 1.0, 'illegal value in blacklist check'
@@ -181,7 +145,7 @@ def line_length_filter(line_lengths):
     this would represent lengths 0,1,5,6,7,8.
     line lengths can also be a tuple of ints.
     """
-    lengths = _parse_range_string(line_lengths)
+    lengths = utils.parse_range_string(line_lengths)
     if not len(lengths):
         raise ValueError("no line lengths received")
 
@@ -199,7 +163,7 @@ def syllable_count_check(text, syllable_counts, max_syllables):
 
 
 def syllable_count_filter(syllable_counts):
-    counts = _parse_range_string(syllable_counts)
+    counts = utils.parse_range_string(syllable_counts)
     if not len(counts):
         raise ValueError("please specify a range of syllable counts")
 
@@ -209,33 +173,11 @@ def syllable_count_filter(syllable_counts):
     return f
 
 
-def _parse_range_string(range_string):
-    """
-    parses strings that represent a range of ints.
-    """
-    range_string = range_string.replace(' ', '')
-    if re.search(r'[^,0-9\-]', range_string):
-        raise ValueError("invalid characters in range")
-
-    result = set(int(x) for x in re.findall(r'[0-9]+', range_string))
-    ranges = re.findall(r'([0-9]+)\-([0-9]+)', range_string)
-    if len(ranges):
-        for r in ranges:
-            result.update([x for x in range(int(r[0]), int(r[1]) + 1)])
-
-    return tuple(result)
-
-
 def regex_check(text, pattern, ignore_case):
     kwargs = {'pattern': pattern, 'string': text}
     if ignore_case:
         kwargs['flags'] = re.I
     return not re.search(**kwargs)
-    # if ignore_case and re.search(pattern, text, flags=re.I):
-    #     return False
-    # elif not ignore_case and re.search(pattern, text):
-    #     return False
-    # return True
 
 
 def regex_filter(pattern, ignore_case):
@@ -260,35 +202,34 @@ def includes_emoji_filter(text):
     return not emoji_filter(text)
 
 
-def real_word_ratio(sentance, debug=False, cutoff=None):
+def real_word_ratio(sentence, debug=False, cutoff=None, lang='en'):
     """
     becomes pass/fail if cutoff is not None
     """
-    # if not hasattr(real_word_ratio, "words"):
-    #     real_word_ratio.words = utils.wordlist()
 
-    sentance = utils.fix_hashtags(sentance)
+    sentence = utils.fix_hashtags(sentence)
 
-    sentance = re.sub(r'[#,\.\?\!]', '', sentance)
-    sentance_words = [w.lower() for w in sentance.split()]
-    if not len(sentance_words):
+    sentence = re.sub(r'[#,\.\?\!]', ' ', sentence)
+    sentence_words = [w.lower() for w in sentence.split()]
+    if not len(sentence_words):
         return 0
 
-    are_words = [w for w in sentance_words if utils.is_real_word(w)]
-    ratio = float(len(''.join(are_words))) / len(''.join(sentance_words))
-
-    # pass/fail
-    if cutoff > 0:
-        return ratio < cutoff
+    are_words = [w for w in sentence_words if utils.is_real_word(w, lang=lang)]
+    ratio = float(len(are_words)) / len(sentence_words)
 
     if debug:
-        print('debugging real word ratio:')
-        print(sentance, sentance_words, are_words, ratio, sep='\n')
-    return ratio
+        print('are words: %s, %0.2f%%' % (' '.join(are_words), ratio))
+    # pass/fail
+    if cutoff > 0:
+        return ratio > cutoff
+    else:
+        # we just return the ratio itself if no cutoff is provided.
+        # I'm not sure if this is used anywhere.
+        return ratio
 
 
-def real_word_ratio_filter(cutoff):
-    f = functools.partial(real_word_ratio, **{'cutoff': cutoff})
+def real_word_ratio_filter(cutoff, lang='en', debug=False):
+    f = functools.partial(real_word_ratio, cutoff=cutoff, lang=lang, debug=debug)
     f.__doc__ = "filtering real-word-ratio with cutoff %0.2f" % cutoff
     return f
 
@@ -326,9 +267,37 @@ def _convert_custom_regex(in_re):
     return regex
 
 
-def main():
-    pass
+# variable filters:
 
 
-if __name__ == "__main__":
-    main()
+# def whitelist_check(text, whitelist, debug=False):
+#     """filter text that contains a word on the whitelist"""
+#     hits = 0
+#     for word in (utils._strip_string(w) for w in text.split()):
+#         if word in whitelist:
+#             if debug:
+#                 print(word)
+#             hits += 1
+#             if hits == 1:
+#                 continue
+#             # number of matches increases chances we'll approve
+#             # basically 1 hit has a 1/3 chance, 3 hits is a sure thing
+#             chance = random.randrange(0, 100)
+#             if chance > (33 * hits):
+#                 return False
+
+#     return True
+
+
+# def whitelist_filter(whitelist):
+#     f = functools.partial(whitelist_check, **{'whitelist': whitelist})
+#     f.__doc__ = 'whitelist words: %s' % repr(whitelist)
+#     return f
+
+
+# def topic_syria_filter():
+#     return whitelist_filter(wordsets.syria)
+
+
+# def topic_ukraine_filter():
+#     return whitelist_filter(wordsets.ukraine)
