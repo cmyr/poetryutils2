@@ -189,11 +189,7 @@ def lines(source, filters, key=None):
 
 
 def filter_line(line, filters):
-    for f in filters:
-        if f(line):
-            return False
-
-    return True
+    return all(f(line) for f in filters)
 
 
 def main():

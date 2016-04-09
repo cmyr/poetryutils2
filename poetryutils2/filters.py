@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import re
 import functools
-import random
+import sys
 
 from . import utils
 from . import syllables
@@ -21,49 +21,42 @@ passes, or when it fails?
 
 # simple filters:
 url_pat = re.compile(r'https?://[a-zA-Z0-9/\.]+')
+at_pat = re.compile(r'@[_a-zA-Z0-9]+')
+hashtag_pat = re.compile(r'#[a-zA-Z0-9]+')
+NON_ASCII_CHARS = re.compile(u'[^\u0001-\u007f]')
 
 
 def url_filter(inp):
-    return url_pat.search(inp) is not None
+    return url_pat.search(inp) is None
 
 
 def screenname_filter(text):
     """filters out @names"""
-    if re.search(r'@[_a-zA-Z0-9]+', text):
-        return True
-    else:
-        return False
+    return at_pat.search(text) is None
 
 
 def hashtag_filter(text):
     """filters out hashtags"""
-    if re.search(r'#[a-zA-Z0-9]+', text):
-        return True
-    else:
-        return False
+    return hashtag_pat.search(text) is None
 
 
 def numeral_filter(text):
     """filters text containing numerals"""
-    if re.search(r'[0-9]', text):
-        return True
+    return re.search(r'[0-9]', text) is None
 
-    return False
+
+def ascii_and_emoji_filter(text):
+    """ filters out non-ascii + emoji text """
+    return NON_ASCII_CHARS.search(text) is None
 
 
 def title_case_filter(text):
-    if not text.istitle():
-        return True
-
-    return False
+    return not text.istitle()
 
 
 def multi_line_filter(text):
     """filters out text that contains non-trailing newlines"""
-    if len(text.splitlines()) > 1:
-        return True
-
-    return False
+    return not (len(text.splitlines()) > 1)
 
 # def tricky_characters(text, debug=False):
 #     """
@@ -87,73 +80,70 @@ def ascii_filter(text):
     try:
         text.decode('ascii')
     except UnicodeEncodeError:
-        return True
-    return False
-
-NON_ASCII_CHARS = re.compile(u'[^\u0001-\u007f]')
-
-
-def ascii_and_emoji_filter(text):
-    """ filters out non-ascii + emoji text """
-    if not NON_ASCII_CHARS.search(text):
         return False
+    return True
+
 
 # variable filters:
 
 
-def whitelist_check(text, whitelist, debug=False):
-    """filter text that contains a word on the whitelist"""
-    hits = 0
-    for word in (utils._strip_string(w) for w in text.split()):
-        if word in whitelist:
-            if debug:
-                print(word)
-            hits += 1
-            if hits == 1:
-                continue
-            # number of matches increases chances we'll approve
-            # basically 1 hit has a 1/3 chance, 3 hits is a sure thing
-            chance = random.randrange(0, 100)
-            if chance > (33 * hits):
-                return False
+# def whitelist_check(text, whitelist, debug=False):
+#     """filter text that contains a word on the whitelist"""
+#     hits = 0
+#     for word in (utils._strip_string(w) for w in text.split()):
+#         if word in whitelist:
+#             if debug:
+#                 print(word)
+#             hits += 1
+#             if hits == 1:
+#                 continue
+#             # number of matches increases chances we'll approve
+#             # basically 1 hit has a 1/3 chance, 3 hits is a sure thing
+#             chance = random.randrange(0, 100)
+#             if chance > (33 * hits):
+#                 return False
 
-    return True
-
-
-def whitelist_filter(whitelist):
-    f = functools.partial(whitelist_check, **{'whitelist': whitelist})
-    f.__doc__ = 'whitelist words: %s' % repr(whitelist)
-    return f
+#     return True
 
 
-def topic_syria_filter():
-    return whitelist_filter(wordsets.syria)
+# def whitelist_filter(whitelist):
+#     f = functools.partial(whitelist_check, **{'whitelist': whitelist})
+#     f.__doc__ = 'whitelist words: %s' % repr(whitelist)
+#     return f
 
 
-def topic_ukraine_filter():
-    return whitelist_filter(wordsets.ukraine)
+# def topic_syria_filter():
+#     return whitelist_filter(wordsets.syria)
+
+
+# def topic_ukraine_filter():
+#     return whitelist_filter(wordsets.ukraine)
 
 
 def blacklist_check(text, blacklist, leakage=0):
     """filter words from a blacklist"""
     assert 0.0 <= leakage < 1.0, 'illegal value in blacklist check'
-
-    for word in (utils._strip_string(w) for w in text.split()):
-        if word in blacklist:
-            if leakage:
-                leak_chance = leakage * 100  # %
-                leak = random.randrange(0, 100)
-                if leak > leak_chance:
-                    return False
-            return True
-    return False
+    # if leakage == 0:
+    if leakage > 0:
+        print('leakage has been de-implemented by lazy coco', file=sys.stderr)
+    return not any(utils._strip_string(w) in blacklist for w in text.split())
+    # else:
+    #     for word in (utils._strip_string(w) for w in text.split()):
+    #         if word in blacklist:
+    #             if leakage:
+    #                 leak_chance = leakage * 100  # %
+    #                 leak = random.randrange(0, 100)
+    #                 if leak > leak_chance:
+    #                     return True
+    #             return False
+    # return False
 
 
 def blacklist_filter(blacklist):
     assert(len(blacklist))
     assert isinstance(blacklist, set) or isinstance(blacklist, list)
 
-    f = functools.partial(blacklist_check, **{'blacklist': blacklist})
+    f = functools.partial(blacklist_check, blacklist=set(blacklist))
     f.__doc__ = "filtering words: %s" % repr(blacklist)
     return f
 
@@ -169,25 +159,20 @@ def bad_swears_filter():
 
 def low_letter_ratio(text, cutoff=0.8):
     t = re.sub(r'[^a-zéèêôçï]', '', text, flags=re.I)
-    try:
-        if (float(len(t)) / len(text)) < cutoff:
-            return True
-    except ZeroDivisionError:
-        pass
-    return False
+    if len(text) == 0:
+        return False
+    return float(len(t)) / len(text) >= cutoff
 
 
 def low_letter_filter(cutoff):
     assert(0.0 < cutoff < 1.0)
-    f = functools.partial(low_letter_ratio, **{'cutoff': cutoff})
+    f = functools.partial(low_letter_ratio, cutoff=cutoff)
     f.__doc__ = "filtering tweets with letter ratio below %0.2f" % cutoff
     return f
 
 
 def line_length_check(text, line_lengths):
-    if len(text) in line_lengths:
-        return False
-    return True
+    return len(text) in line_lengths
 
 
 def line_length_filter(line_lengths):
@@ -228,7 +213,7 @@ def _parse_range_string(range_string):
     """
     parses strings that represent a range of ints.
     """
-
+    range_string = range_string.replace(' ', '')
     if re.search(r'[^,0-9\-]', range_string):
         raise ValueError("invalid characters in range")
 
@@ -242,11 +227,15 @@ def _parse_range_string(range_string):
 
 
 def regex_check(text, pattern, ignore_case):
-    if ignore_case and re.search(pattern, text, flags=re.I):
-        return False
-    elif not ignore_case and re.search(pattern, text):
-        return False
-    return True
+    kwargs = {'pattern': pattern, 'string': text}
+    if ignore_case:
+        kwargs['flags'] = re.I
+    return not re.search(**kwargs)
+    # if ignore_case and re.search(pattern, text, flags=re.I):
+    #     return False
+    # elif not ignore_case and re.search(pattern, text):
+    #     return False
+    # return True
 
 
 def regex_filter(pattern, ignore_case):
@@ -264,9 +253,7 @@ emoji_single = re.compile(
 
 
 def emoji_filter(text):
-    if len(emoji_single.findall(text)) > 0:
-        return True
-    return False
+    return len(emoji_single.findall(text)) == 0
 
 
 def includes_emoji_filter(text):
@@ -288,17 +275,11 @@ def real_word_ratio(sentance, debug=False, cutoff=None):
         return 0
 
     are_words = [w for w in sentance_words if utils.is_real_word(w)]
-    # debuging:
-    # not_words = set(sentance_words).difference(set(are_words))
-
     ratio = float(len(''.join(are_words))) / len(''.join(sentance_words))
 
     # pass/fail
     if cutoff > 0:
-        if ratio < cutoff:
-            return True
-        else:
-            return False
+        return ratio < cutoff
 
     if debug:
         print('debugging real word ratio:')
