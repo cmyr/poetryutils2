@@ -1,7 +1,5 @@
-import string
+# coding: utf-8
 import re
-import os
-# from . import special_syllables
 
 from . import utils
 from .special_syllables import special_syllables_en
@@ -41,12 +39,7 @@ for line in special_syllables_en:
         fallback_cache[_normalize_word(toks[0])] = int(toks[1])
 
 
-def syllables_in_number(number):
-    # yes I'm inelegant
-    # main special-case: the teens
-    pass
-
-def count_syllables(sentance, debug=False, cutoff=None):
+def count_syllables(sentance, debug=False, cutoff=None, lang='en'):
     # first lets strip out punctuation and emotive marks
     count = 0
 
@@ -108,7 +101,7 @@ def _format_input(sentance):
     text = LINK_RE.sub('(link)', text)  # remove links
     text = APOST_RE.sub(r'\1\2', text)  # contract it's, isn't, wasn't etc.
     text = PUNCT_RE.sub(' ', text)  # remove punctuation
-    text = re.sub(r'[^a-zA-Z ]', '', text) # remove everything else
+    text = re.sub(r'[^a-zA-Z ]', '', text)  # remove everything else
     text = re.sub(r' +', ' ', text)  # redudent spaces
     return text
 
@@ -154,7 +147,6 @@ def _count(word, debug=False):
         count = 1
 
     fallback_cache[orig_word] = count
-    
     return count
 
 #

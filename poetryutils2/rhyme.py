@@ -23,12 +23,12 @@ except ImportError:
     DBM_V = 'anydbm'
     DBM_FLAGS = 'c'
 
-from . import utils, espeak_wrapper
+from . import utils, espeak_wrapper, filters
 
 print('using %s for dbm' % DBM_V, file=sys.stderr)
 
 
-double_end_letters = set(['f', 'e', 'l', 'i', 'o', 's'])
+DOUBLE_END_LETTERS_EN = set('felios')
 ipa_vowels = set("ˈˌaeiouyɑɛɪöɩɔɚɷʊʌœöøəæː")
 
 
@@ -131,7 +131,6 @@ class PhonemeRhymer(object):
         """
         some adjustments we make to ipa
         """
-        
         if not utils.isstring(phonemes):
             print('bad phoneme data:', type(phonemes))
             return
@@ -147,7 +146,7 @@ class PhonemeRhymer(object):
             last_word = words.pop()
             if last_word[0] == '#':
                 last_word = utils.fix_hashtags(text).split().pop()
-            if last_word.isalpha():
+            if last_word.isalpha() and filters.contains_vowel_filter(last_word):
                 return self._normalize_word(last_word)
         return None
 
@@ -160,7 +159,7 @@ class PhonemeRhymer(object):
         if len(word) > 2:
             if word[-1] == word[-2]:
                 pattern = word[-1] + '+$'
-                if word[-1] in double_end_letters:
+                if self.lang == 'en' and word[-1] in DOUBLE_END_LETTERS_EN:
                     # ass != as, e.g.
                     repl = word[-1] * 2
                     word = re.sub(pattern, repl, word)

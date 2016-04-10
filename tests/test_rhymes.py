@@ -40,6 +40,9 @@ def test_end_words():
         assert r == t[1], print(t, r)
 
     assert rhymer_en.rhyme_word('suxxxx69') is None
+    assert rhymer_en.rhyme_word('since two thousand fourteen until nw') is None
+    assert rhymer_fr.rhyme_word('Le mec a failli vomir son âme jpp') is None
+    assert rhymer_fr.rhyme_word('Ça charrie sans mentionner tout ça mdr') is None
 
 
 def test_end_sounds():
@@ -67,7 +70,7 @@ def test_rhyme_word():
 
 def test_some_rhymes():
     tests = [
-        'fort port', 
+        'fort port',
         'do you',
         'hi bye',
         'sigh cry',

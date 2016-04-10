@@ -37,6 +37,18 @@ def test_ascii_and_emoji():
     assert not filters.ascii_and_emoji_filter('this has an 💩')
 
 
+def test_vowel_filter():
+    assert filters.contains_vowel_filter('this is fine')
+    assert filters.contains_vowel_filter('thé')
+    assert not filters.contains_vowel_filter('thfff')
+
+
+def test_newline_filter():
+    assert filters.newline_filter('this is totally fine!')
+    assert not filters.newline_filter('''but this
+        has problems''')
+
+
 def test_title_case():
     assert filters.title_case_filter('This is ju\'st Colin capitalizing something normally')
     assert not filters.title_case_filter('This Is Title Case')

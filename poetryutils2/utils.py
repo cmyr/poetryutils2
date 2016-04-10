@@ -82,6 +82,7 @@ def parse_range_string(range_string):
     """
     parses strings that represent a range of ints.
     """
+
     range_string = range_string.replace(' ', '')
     if re.search(r'[^,0-9\-]', range_string):
         raise ValueError("invalid characters in range")
@@ -122,7 +123,7 @@ def wordlist_en():
         words.update(
             l.decode('utf-8').lower().strip() for l in f.read().splitlines())
 
-    print('loaded %d words (en)' % len(words))
+    print('loaded %d words (en)' % len(words), file=sys.stderr)
     return words
 
 
@@ -132,7 +133,7 @@ def wordlist_fr():
     with open(filepath) as f:
         words.update(
             l.decode('utf-8').lower().strip() for l in f.read().splitlines())
-    print('loaded %d words (fr)' % len(words))
+    print('loaded %d words (fr)' % len(words), file=sys.stderr)
     return words
 
 

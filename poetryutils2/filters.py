@@ -7,10 +7,7 @@ import re
 import functools
 import sys
 
-from . import utils
-from . import syllables
-from . import rhyme
-from . import wordsets
+from . import utils, syllables, wordsets
 
 
 """
@@ -24,6 +21,7 @@ url_pat = re.compile(r'https?://[a-zA-Z0-9/\.]+')
 at_pat = re.compile(r'@[_a-zA-Z0-9]+')
 hashtag_pat = re.compile(r'#[a-zA-Z0-9]+')
 NON_ASCII_CHARS = re.compile(u'[^\u0001-\u007f]')
+VOWEL_PAT = re.compile(r'[aeiouyéèêôï]')
 
 
 def url_filter(inp):
@@ -48,6 +46,14 @@ def numeral_filter(text):
 def ascii_and_emoji_filter(text):
     """ filters out non-ascii + emoji text """
     return NON_ASCII_CHARS.search(text) is None
+
+
+def newline_filter(text):
+    return re.search(r'\n', text) is None
+
+
+def contains_vowel_filter(text):
+    return VOWEL_PAT.search(text) is not None
 
 
 def title_case_filter(text):
@@ -234,17 +240,17 @@ def real_word_ratio_filter(cutoff, lang='en', debug=False):
     return f
 
 
-def rhymes_with_word(text, word):
-    rhyme_word = rhyme.rhyme_word(text)
-    if rhyme.words_rhyme(rhyme_word, word):
-        return False
-    return True
+# def rhymes_with_word(text, word):
+#     rhyme_word = rhyme.rhyme_word(text)
+#     if rhyme.words_rhyme(rhyme_word, word):
+#         return False
+#     return True
 
 
-def rhyme_filter(word):
-    f = functools.partial(rhymes_with_word, **{'word': word})
-    f.__doc__ = "filtering for rhymes with %s" % word
-    return f
+# def rhyme_filter(word):
+#     f = functools.partial(rhymes_with_word, **{'word': word})
+#     f.__doc__ = "filtering for rhymes with %s" % word
+#     return f
 
 
 def emoticons(text):
