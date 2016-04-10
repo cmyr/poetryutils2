@@ -28,3 +28,9 @@ def test_coupler_arg_parsing():
     assert sorting.Coupler(syllable_counts=(1, 2, 4)).syllable_counts == set([1, 2, 4])
     assert sorting.Coupler(syllable_counts=7).syllable_counts == set([7])
 
+
+def test_rhymer_en():
+    lines = ['i love you too', 'I know you do']
+    assert sum(1 for p in sorting.Rhymer(debug=True).generate_from_source(lines)) == 1
+    lines[0] = 'i rhyme with nothing'
+    assert sum(1 for p in sorting.Rhymer(debug=True).generate_from_source(lines)) == 0

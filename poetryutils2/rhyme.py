@@ -40,10 +40,10 @@ if not os.path.exists(PHONEME_DATA_DIR):
 __rhymers = {}
 
 
-def rhymer_for_language(lang):
+def rhymer_for_language(lang, debug=False):
     if lang in ('en', 'fr'):
         if not __rhymers.get(lang):
-            __rhymers[lang] = PhonemeRhymer(PHONEME_DATA_DIR, lang)
+            __rhymers[lang] = PhonemeRhymer(PHONEME_DATA_DIR, lang, debug=debug)
         return __rhymers[lang]
     else:
         raise Exception('lang %s is unsupported' % lang)
@@ -57,13 +57,14 @@ class PhonemeRhymer(object):
         'fr': 'fr'
         }
 
-    def __init__(self, basepath, lang, dbpath=None):
+    def __init__(self, basepath, lang, dbpath=None, debug=False):
         super(PhonemeRhymer, self).__init__()
         self.basepath = basepath
         self.lang = lang
         self.dbpath = dbpath or os.path.join(self.basepath, 'phonemes_%s.db' % self.lang)
         self.new_words = 0
         self.db = None
+        self.debug = debug
 
     def __len__(self):
         self.open_db()
@@ -90,21 +91,33 @@ class PhonemeRhymer(object):
             if word not in self.db:
                 _, phonemes = espeak_wrapper.extract_phonemes(word, self.lang)
                 self.db[word] = self._adjust_phonemes(phonemes).encode('utf-8')
-            word = self.db[word].decode('utf-8')
-            return word
+            phonemes = self.db[word].decode('utf-8')
+            # we have some bad entries in the database from before we did phoneme adjustment
+            if phonemes != self._adjust_phonemes(phonemes):
+                self.db[word] = self._adjust_phonemes(phonemes).encode('utf-8')
+                print('adjusted phonemes for %s' % phonemes, file=sys.stderr)
+                return self.db[word].decode('utf-8')
+            return phonemes
         finally:
             self.close_db()
 
     def is_rhyme(self, text1, text2):
-        text1 = self.rhyme_word(text1)
-        text2 = self.rhyme_word(text2)
+        w1 = self.rhyme_word(text1)
+        w2 = self.rhyme_word(text2)
 
-        p1 = self.get_phonemes(text1)
-        p2 = self.get_phonemes(text2)
+        p1 = self.get_phonemes(w1)
+        p2 = self.get_phonemes(w2)
 
         if len(p1) and len(p2):
-            if self._end_sound(p1) == self._end_sound(p2):
+            s1 = self._end_sound(p1)
+            s2 = self._end_sound(p2)
+
+            if self.debug:
+                print(text1, text2, w1, w2, p1, p2, s1, s2)
+            if s1.lstrip('ˈˌ') == s2.lstrip('ˈˌ'):
                 return not self._are_homophonic(p1, p2)
+            elif self.debug:
+                print('no rhyme')
 
         return False
 
@@ -118,13 +131,12 @@ class PhonemeRhymer(object):
         """
         some adjustments we make to ipa
         """
-
+        
         if not utils.isstring(phonemes):
             print('bad phoneme data:', type(phonemes))
             return
-        phonemes = re.sub(r'[ˈˌ]', '', phonemes, flags=re.UNICODE)
+        # phonemes = re.sub(r'[ˈˌ]', '', phonemes, flags=re.UNICODE)
         phonemes = re.sub(r'(oː|ɔː)', 'ö', phonemes, flags=re.UNICODE)
-
         return phonemes
 
     def rhyme_word(self, text):
@@ -168,37 +180,28 @@ class PhonemeRhymer(object):
         if not phonemes or not len(phonemes):
             raise ValueError('phonemes cannot be None')
 
-        p = list(phonemes)
-        sound = p.pop()
-        if sound[0] in ipa_vowels:
-            brake = False
-            while True:
-                try:
-                    l = p.pop()
-                except IndexError:
-                    break
-                if l in ipa_vowels and brake is True:
-                    break
-                elif l not in ipa_vowels:
-                    brake = True
-                sound = l + sound
-
+        p = list(reversed(phonemes))
+        if self.debug:
+            print('extracting end sound for %s' % phonemes)
+        if p[0] in ipa_vowels:
             # handle sounds that end w/ vowels
+            for idx, letter in enumerate(p[1:]):
+                if self.debug:
+                    print(idx, letter)
+                # if letter in ipa_vowels and p[idx] not in ipa_vowels:
+                if letter not in ipa_vowels:
+                    if self.debug:
+                        print('breaking on %s' % letter)
+                    break
+            return ''.join(reversed(p[:idx+1]))
         else:
-            # sounds that end in consonants
-            brake = False
-            while True:
-                try:
-                    l = p.pop()
-                except IndexError:
+            for idx, letter in enumerate(p[1:]):
+                # stop on first consonant after a vowl
+                if letter not in ipa_vowels and p[idx] in ipa_vowels:
+                    if self.debug:
+                        print('breaking on %s' % letter)
                     break
-                if l not in ipa_vowels and brake is True:
-                    break
-                elif l in ipa_vowels:
-                    brake = True
-                sound = l + sound
-
-        return sound
+            return ''.join(reversed(p[:idx+1]))   
 
     def _are_homophonic(self, phonemes1, phonemes2):
         if phonemes1 == phonemes2:

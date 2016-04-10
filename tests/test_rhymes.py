@@ -7,8 +7,8 @@ import os
 from poetryutils2 import rhyme, espeak_wrapper
 
 
-rhymer_en = rhyme.rhymer_for_language('en')
-rhymer_fr = rhyme.rhymer_for_language('fr')
+rhymer_en = rhyme.rhymer_for_language('en', debug=True)
+rhymer_fr = rhyme.rhymer_for_language('fr', debug=True)
 
 
 def test_espeak():
@@ -17,7 +17,7 @@ def test_espeak():
 
 
 def test_get_phonemes():
-    assert rhymer_en
+    assert rhymer_en is not None
     assert rhymer_en.get_phonemes('hello') == 'həlˈoʊ'
 
 
@@ -42,7 +42,7 @@ def test_end_words():
     assert rhymer_en.rhyme_word('suxxxx69') is None
 
 
-def end_sound_tests():
+def test_end_sounds():
     sound_tests = """
      həlˈoʊ ˈoʊ
      wˈaɪ ˈaɪ
@@ -55,13 +55,51 @@ def end_sound_tests():
      hˈuːɾɪnˌæni i"""
 
     sound_tests = [tuple(x.split()) for x in sound_tests.splitlines() if len(x)]
+    assert len(sound_tests) == 9
     for t in sound_tests:
-        s = rhymer_en.sound_for_word(t[0])
+        s = rhymer_en._end_sound(t[0])
         assert s == t[1], '%s %s %s' % (t[0], t[1], s)
 
 
 def test_rhyme_word():
         pass
+
+
+def test_some_rhymes():
+    tests = [
+        'fort port', 
+        'do you',
+        'hi bye',
+        'sigh cry',
+        'mane reign',
+        'lane feign',
+        'drill shrill',
+        'kill bill',
+        'heft left',
+        'tart bart',
+        'age rage',
+        'stare bare',
+        'care wear',
+        'scream dream']
+    for test in tests:
+        assert rhymer_en.is_rhyme(*test.split())
+
+
+def test_some_non_rhymes():
+    tests = [
+        'sort hurt',
+        'bore burn',
+        'yearn torn',
+        # 'either yeller',
+        'hurt burnt'
+        ]
+
+    for test in tests:
+        assert not rhymer_en.is_rhyme(*test.split())
+
+
+def test_adjust_phonemes():
+    assert rhymer_en._adjust_phonemes("fˈɔːɹt") == "fˈöɹt"
 
 
 def test_add_words():
