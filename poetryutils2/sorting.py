@@ -7,7 +7,7 @@ import sys
 import re
 import functools
 
-from . import rhyme
+from . import rhyme, utils
 from .syllables import count_syllables
 
 NormalizedLine = namedtuple('NormalizedLine', ['text', 'info'])
@@ -17,11 +17,24 @@ class Poem(object):
 
     """lines + metadata"""
 
-    def __init__(self, poem_type, lines):
+    def __init__(self, poem_type, lang, lines):
         super(Poem, self).__init__()
-        self.poem_type = poem_type
-        self.lines = lines
+        self._poem_type = poem_type
+        self._lang = lang
+        self._lines = lines
 
+    @property
+    def lang(self):
+        return self._lang
+    
+    @property
+    def poem_type(self):
+        return self._poem_type
+    
+    @property
+    def lines(self):
+        return self._lines
+    
     def __str__(self):
         return str(unicode(self).encode('utf-8'))
 
@@ -31,6 +44,7 @@ class Poem(object):
     def to_dict(self):
         return {
             'poem_type': self.poem_type,
+            'lang': self.lang,
             'lines': [{"text": l.text, "info": l.info} for l in self.lines]
         }
 
@@ -76,24 +90,18 @@ class Poet(object):
             return poem
 
     def normalize_line(self, line, key):
-        if isinstance(line, basestring):
+        if utils.isstring(line):
             if isinstance(line, str):
-                line = NormalizedLine(line.decode('utf-8'), None)
-            else:
-                line = NormalizedLine(line, None)
+                line = line.decode('utf-8')
+            return NormalizedLine(line.decode('utf-8'), None)
         else:
             if not key:
-                print('non-string sources require a key')
-                return
+                raise Exception('non-string sources require a key')
             line = NormalizedLine(line[key], line)
         return line
 
     def _add_line(self, line):
-        # poems are tuples for a reason i should probably revisit?
-        return Poem(self.poem_type, [line])
-
-    def dictify(self, poem):
-        return [{"text": l.text, "info": l.info} for l in poem]
+        return Poem(poem_type=self.poem_type, lang=self.lang, lines=[line])
 
 
 class Rhymer(Poet):
@@ -118,7 +126,6 @@ class Rhymer(Poet):
         end_word = self.rhyme_finder.rhyme_word(line.text)
         if end_word:
             end_sound = self.rhyme_finder.sound_for_word(end_word)
-
             if self.not_homophonic(line, end_sound):
                 self.endings[end_sound].append(line)
                 if len(self.endings[end_sound]) == self.rhyme_count:
@@ -126,6 +133,7 @@ class Rhymer(Poet):
                         to_return = tuple(self.endings[end_sound])
                     else:
                         to_return = Poem(self.poem_type,
+                                         self.lang,
                                          list(self.endings[end_sound]))
                     self.endings[end_sound] = list()
                     return to_return
@@ -148,16 +156,29 @@ class Coupler(Poet):
 
     """finds rhyming couplets"""
 
-    def __init__(self, lang='en'):
-        super(Coupler, self).__init__()
-        self.lang = lang
+    def __init__(self, syllable_counts=None, **kwargs):
+        """finds rhyming couplets with equal syllable counts.
+        :param syllable_counts: None or int or collection of ints or str .
+        If str, should contain numbers, ',' and '-', describing a range, e.g:
+        '1,2,6-9' == [1, 2, 6, 7, 8, 9] """
+
+        super(Coupler, self).__init__(**kwargs)
+        self.syllable_counts = syllable_counts
+        if utils.isstring(syllable_counts):
+            self.syllable_counts = set(utils.parse_range_string(syllable_counts))
+        elif hasattr(syllable_counts, '__len__'):
+            self.syllable_counts = set(syllable_counts)
+        elif isinstance(syllable_counts, int):
+            self.syllable_counts = set([syllable_counts])
+
         _Rhymer = functools.partial(Rhymer, lang=self.lang)
         self.rhymers = defaultdict(_Rhymer)
         self._poem_type = "couplet"
 
-    def _add_line(self, line):
+    def _add_line(self, line, raw=False):
         syllable_count = count_syllables(line.text)
-        return self.rhymers[syllable_count]._add_line(line)
+        if not self.syllable_counts or syllable_count in self.syllable_counts:
+            return self.rhymers[syllable_count]._add_line(line, raw=raw)
 
 
 class SyllablePoet(Poet):
@@ -184,7 +205,10 @@ class SyllablePoet(Poet):
             if len(self.lines[syllables]) < count:
                 return
 
-        return Poem(self.poem_type, [self.lines[s].pop() for s in self.line_syllables])
+        return Poem(
+            self.poem_type,
+            self.lang,
+            [self.lines[s].pop() for s in self.line_syllables])
 
 
 class Limericker(Poet):
@@ -216,7 +240,7 @@ class Limericker(Poet):
                         self.lines[6].remove(sixer)
                         lines = [
                             niner[0], niner[1], sixer[0], sixer[1], niner[2]]
-                        return Poem(self.poem_type, lines)
+                        return Poem(self.poem_type, self.lang, lines)
 
     def debug_info(self):
         for (key, value) in self.lines.items():
@@ -225,28 +249,13 @@ class Limericker(Poet):
             print("%d syllable rhymes:" % count)
             self.rhymers[count].debug_info()
 
-# class Villaneller(Poet):
-#     """ finds villanelles """
-#     def __init__(self):
-#         super(Villaneller, self).__init__()
-#         self.lines = defaultdict(list)
-#         self.rhymer = Rhymer(rhyme_count=7)
-
-#     def _add_line(self, line):
-#         new_rhyme = False
-#         syllable_count = count_syllables(line.text)
-#         if syllable_count == 10:
-#             new_rhyme = self.rhymer._add_line(line, raw=True)
-
-#         if new_rhyme:
-
 
 class Haikuer(Poet):
 
     """writes boooootiful poem"""
 
-    def __init__(self, debug=False):
-        super(Haikuer, self).__init__(debug)
+    def __init__(self, **kwargs):
+        super(Haikuer, self).__init__(**kwargs)
         self.sevens = list()
         self.fives = list()
         self.number_of_poems = 0
@@ -273,10 +282,46 @@ class Haikuer(Poet):
                 )
 
             return Poem(self.poem_type,
+                        self.lang,
                         [self.fives.pop(),
                          self.sevens.pop(),
                          self.fives.pop()]
                         )
+
+
+class FleurDuMal(Poet):
+    def __init__(self, **kwargs):
+        super(FleurDuMal, self).__init__(**kwargs)
+        self.coupler = Coupler((12, 10))
+        self.couplets = defaultdict(list)
+        self.rhyme_finder = rhyme.rhymer_for_language(self.lang)
+        self._poem_type = 'baudelairist'
+
+    def _add_line(self, line):
+        syllable_count = count_syllables(line.text, lang=self.lang)
+        if syllable_count in (10, 12):
+            couplet = self.coupler._add_line(line, raw=True)
+            if couplet:
+                return self.check_fo_art(couplet, syllable_count)
+
+    def check_fo_art(self, couplet, syllable_count):
+        other_key = 12 if syllable_count == 10 else 10
+        if len(self.couplets[other_key]):
+            for other_couplet in self.couplets[other_key]:
+                if not self.rhyme_finder.is_rhyme(couplet[0].text, other_couplet[0].text):
+                    self.couplets[other_key].remove(other_couplet)
+                    longer = couplet if syllable_count == 12 else other_couplet
+                    shorter = couplet if syllable_count == 10 else other_couplet
+                    return Poem(
+                        self.poem_type,
+                        self.lang,
+                        lines=[longer[0], shorter[0], shorter[1], longer[1]])
+        # no match found, add to couplets
+        self.couplets[syllable_count].append(couplet)
+
+
+
+
 
 
 class Mimic(Poet):
@@ -339,13 +384,28 @@ class Mimic(Poet):
             return Poem(self.poem_type,
                         [NormalizedLine(l, None) for l in outlines])
 
+# class Villaneller(Poet):
+#     """ finds villanelles """
+#     def __init__(self):
+#         super(Villaneller, self).__init__()
+#         self.lines = defaultdict(list)
+#         self.rhymer = Rhymer(rhyme_count=7)
+
+#     def _add_line(self, line):
+#         new_rhyme = False
+#         syllable_count = count_syllables(line.text)
+#         if syllable_count == 10:
+#             new_rhyme = self.rhymer._add_line(line, raw=True)
+
+#         if new_rhyme:
+
 
 class Concrete(Poet):
 
     """writes concrete poems, where the qualifier is line length."""
 
-    def __init__(self, line_lengths=list(range(8, 40)), show_progress=False):
-        super(Concrete, self).__init__()
+    def __init__(self, line_lengths=list(range(8, 40)), show_progress=False, **kwargs):
+        super(Concrete, self).__init__(**kwargs)
         self.line_lengths = line_lengths
         self.next_index = 0
         self.lines = list()
@@ -357,11 +417,11 @@ class Concrete(Poet):
             self.lines.append(line)
             self.next_index = (self.next_index + 1) % len(self.line_lengths)
             if self.next_index != 0 and self.show_progress:
-                return Poem(self.poem_type, self.lines)
+                return Poem(self.poem_type, self.lang, self.lines)
             else:
                 lines = list(self.lines)
                 self.lines = list()
-                return Poem(self.poem_type, lines)
+                return Poem(self.poem_type, self.lang, lines)
 
 
 class MultiPoet(Poet):
