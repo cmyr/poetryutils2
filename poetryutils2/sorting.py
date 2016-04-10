@@ -2,10 +2,11 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from collections import defaultdict, Counter, namedtuple
+from collections import defaultdict, Counter
 import sys
 import re
 import functools
+import itertools
 
 from . import rhyme, utils
 from .syllables import count_syllables
@@ -23,18 +24,21 @@ class Line(object):
     @property
     def text(self):
         return self._text
-    
+
     @property
     def info(self):
         return self._info
-    
+
     @property
     def end_sound(self):
         return self._end_sound
-    
+
     @property
     def syllable_count(self):
         return self._syllable_count
+
+    def __repr__(self):
+        return ("<Line: %s>" % self.text).encode('utf-8')
 
     def __str__(self):
         return self.text.encode('utf-8')
@@ -44,11 +48,14 @@ class Poem(object):
 
     """lines + metadata"""
 
-    def __init__(self, poem_type, lang, lines):
+    def __init__(self, poem_type, lang, lines, line_breaks=None):
+        '''if line_breaks is not None it should be an iterable of indexes
+        cooresponding to lines after which we should insert a newline.'''
         super(Poem, self).__init__()
         self._poem_type = poem_type
         self._lang = lang
         self._lines = lines
+        self.line_breaks = line_breaks
 
     @property
     def lang(self):
@@ -66,7 +73,18 @@ class Poem(object):
         return str(unicode(self).encode('utf-8'))
 
     def __unicode__(self):
-        return "\n" + "\n".join(l.text for l in self.lines) + "\n"
+        if not self.line_breaks:
+            return "\n%s\n" % "\n".join(l.text for l in self.lines)
+        else:
+            out = []
+            for idx, line in enumerate(self.lines):
+                out.append(line.text)
+                if idx in self.line_breaks:
+                    out.append('')
+            return '\n%s\n' % '\n'.join(out) 
+
+    def __repr__(self):
+        return self.to_dict()
 
     def to_dict(self):
         return {
@@ -120,7 +138,7 @@ class Poet(object):
         if utils.isstring(line):
             if isinstance(line, str):
                 line = line.decode('utf-8')
-            return Line(line.decode('utf-8'), None)
+            return Line(line, None)
         else:
             if not key:
                 raise Exception('non-string sources require a key')
@@ -153,7 +171,9 @@ class Rhymer(Poet):
         end_word = self.rhyme_finder.rhyme_word(line.text)
         if end_word:
             end_sound = self.rhyme_finder.sound_for_word(end_word)
-            line.end_sound = end_sound
+            line._end_sound = end_sound
+            if self.debug:
+                print(line, end_word, end_sound)
             if self.not_homophonic(line, end_sound):
                 self.endings[end_sound].append(line)
                 if len(self.endings[end_sound]) == self.rhyme_count:
@@ -348,8 +368,39 @@ class FleurDuMal(Poet):
         self.couplets[syllable_count].append(couplet)
 
 
+class Sonnetter(Poet):
+    def __init__(self, **kwargs):
+        super(Sonnetter, self).__init__(**kwargs)
+        self.coupler = Coupler(10)
+        self.couplets = defaultdict(list)
+        self._poem_type = 'sonnet'
+        self.line_breaks = set([3, 7, 11])
+    
+    def _add_line(self, line):
+        couplet = self.coupler._add_line(line, raw=True)
+        if couplet:
+            self.couplets[line.end_sound].append(couplet)
+            return self.check_for_art()
 
+    def check_for_art(self):
+        sounds_with_couplets = [k for k in self.couplets if len(self.couplets[k])]
+        if len(sounds_with_couplets) >= 7:
+            sounds_with_couplets = sounds_with_couplets[:7]
+            couplets = [list(self.couplets[k].pop()) for k in sounds_with_couplets]
+            assert len(couplets) == 7
 
+            lines = list(
+                zip(couplets[0], couplets[1]) +
+                zip(couplets[2], couplets[3]) + 
+                zip(couplets[4], couplets[5]))
+
+            lines = [l for ll in lines for l in ll] + list(couplets[6])
+
+            return Poem(
+                poem_type=self.poem_type,
+                lang=self.lang,
+                lines=lines,
+                line_breaks=self.line_breaks)
 
 
 class Mimic(Poet):
