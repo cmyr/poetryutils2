@@ -110,7 +110,7 @@ class PhonemeRhymer(object):
 
     def sound_for_word(self, word):
         '''this is sort of legacy: it used to presume it might use different
-        functions to get different sounds from a wordd?'''
+        functions to get different sounds from a word?'''
         p = self.get_phonemes(word)
         return self._end_sound(p)
 
