@@ -34,3 +34,21 @@ def test_rhymer_en():
     assert sum(1 for p in sorting.Rhymer(debug=True).generate_from_source(lines)) == 1
     lines[0] = 'i rhyme with nothing'
     assert sum(1 for p in sorting.Rhymer(debug=True).generate_from_source(lines)) == 0
+
+
+def test_ignore_language():
+    poet_fr = sorting.Poet(lang='fr')
+    poet_en = sorting.Poet(lang='en')
+    item = {'text': 'a line, for a poem.', 'lang': 'en'}
+    assert not poet_fr.add_keyed_line(item, key='text')
+    assert poet_en.add_keyed_line(item, key='text')
+
+
+def test_multi_poet_language_ignore():
+    poet_fr = sorting.Poet(lang='fr')
+    poet_en = sorting.Poet(lang='en')
+    multi = sorting.MultiPoet(poets=[poet_fr, poet_en])
+    assert len(multi.add_keyed_line(
+        {'text': 'a line, for a poem.', 'lang': 'en'},
+        key='text')) == 1
+    assert len(multi.add_keyed_line('keyless line')) == 2

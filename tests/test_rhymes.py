@@ -94,6 +94,7 @@ def test_some_non_rhymes():
         'bore burn',
         'yearn torn',
         # 'either yeller',
+        'easily poppy',
         'hurt burnt'
         ]
 

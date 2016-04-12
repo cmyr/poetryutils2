@@ -6,7 +6,6 @@ from collections import defaultdict, Counter
 import sys
 import re
 import functools
-import itertools
 
 from . import rhyme, utils
 from .syllables import count_syllables
@@ -81,7 +80,7 @@ class Poem(object):
                 out.append(line.text)
                 if idx in self.line_breaks:
                     out.append('')
-            return '\n%s\n' % '\n'.join(out) 
+            return '\n%s\n' % '\n'.join(out)
 
     def __repr__(self):
         return self.to_dict()
@@ -114,25 +113,26 @@ class Poet(object):
 
     def generate_from_source(self, source, key=None, yield_lines=False):
         for item in source:
-            line = self.normalize_line(item, key)
-            self.lines_seen += 1
             if yield_lines:
-                yield line.text
-            poem = self._add_line(line)
+                yield self.normalize_line(item, key).text
 
-            # multipoet returns lists of poems
-            if isinstance(poem, list):
-                for p in poem:
-                    yield p
-            elif isinstance(poem, Poem):
-                yield poem
+            poems = self.add_keyed_line(item, key)
+            if not poems:
+                continue
 
-    def add_keyed_line(self, line, key=None, yield_lines=False):
+            if not isinstance(poems, list):
+                poems = [poems]
+            for p in poems:
+                yield p
+
+    def add_keyed_line(self, line, key=None):
         line = self.normalize_line(line, key)
+        # skip lines not in our language
+        if self.lang and line.info and line.info.get('lang', self.lang) != self.lang:
+            return None
         self.lines_seen += 1
         poem = self._add_line(line)
-        if poem:
-            return poem
+        return poem
 
     def normalize_line(self, line, key):
         if utils.isstring(line):
@@ -226,7 +226,10 @@ class Coupler(Poet):
     def _add_line(self, line, raw=False):
         syllable_count = count_syllables(line.text)
         if not self.syllable_counts or syllable_count in self.syllable_counts:
-            return self.rhymers[syllable_count]._add_line(line, raw=raw)
+            poem = self.rhymers[syllable_count]._add_line(line, raw=raw)
+            if poem and not raw:
+                poem._poem_type = self.poem_type
+            return poem
 
 
 class SyllablePoet(Poet):
@@ -375,7 +378,7 @@ class Sonnetter(Poet):
         self.couplets = defaultdict(list)
         self._poem_type = 'sonnet'
         self.line_breaks = set([3, 7, 11])
-    
+
     def _add_line(self, line):
         couplet = self.coupler._add_line(line, raw=True)
         if couplet:
@@ -391,7 +394,7 @@ class Sonnetter(Poet):
 
             lines = list(
                 zip(couplets[0], couplets[1]) +
-                zip(couplets[2], couplets[3]) + 
+                zip(couplets[2], couplets[3]) +
                 zip(couplets[4], couplets[5]))
 
             lines = [l for ll in lines for l in ll] + list(couplets[6])
@@ -512,12 +515,13 @@ class MultiPoet(Poet):
         self.poets = poets
         self.keyed_poets = {p.poem_type: p for p in poets}
         self._poem_type = "multipoet"
+        self.lang = None
 
-    def _add_line(self, line):
-        poems = [p._add_line(line) for p in self.poets]
+    def add_keyed_line(self, line, key=None):
+        self.lines_seen += 1
+        poems = [p.add_keyed_line(line, key) for p in self.poets]
         poems = [p for p in poems if p]
-        if len(poems):
-            return poems
+        return poems if len(poems) else None
 
     def add_poet(self, poet, key=None):
         self.poets.append(poet)
