@@ -115,13 +115,13 @@ def wordlist_en():
     try:
         import nltk
         words.update(
-            w.decode('utf-8').lower().strip() for w in nltk.corpus.words.words())
+            unicodify(w).lower().strip() for w in nltk.corpus.words.words())
     except ImportError:
         print('failed to import nltk, using shorter english wordlist', file=sys.stderr)
     filepath = os.path.join(RESOURCES_DIR, 'words.txt')
     with open(filepath) as f:
         words.update(
-            l.decode('utf-8').lower().strip() for l in f.read().splitlines())
+            unicodify(l).lower().strip() for l in f.read().splitlines())
 
     print('loaded %d words (en)' % len(words), file=sys.stderr)
     return words
@@ -132,7 +132,7 @@ def wordlist_fr():
     filepath = os.path.join(RESOURCES_DIR, 'mots_fr.txt')
     with open(filepath) as f:
         words.update(
-            l.decode('utf-8').lower().strip() for l in f.read().splitlines())
+            unicodify(l).lower().strip() for l in f.read().splitlines())
     print('loaded %d words (fr)' % len(words), file=sys.stderr)
     return words
 
@@ -157,7 +157,7 @@ def lines_from_file(filepath):
     lines = None
     with open(filepath) as f:
         lines = f.read().splitlines()
-        lines = [unicode(l.decode('utf8')) for l in lines]
+        lines = [unicodify(l) for l in lines]
     return lines
 
 
@@ -185,7 +185,7 @@ def line_iter(source, filters, key=None, delay=0):
         if isinstance(item, basestring):
             line = unicodify(item)
         else:
-            assert key is None, 'non-string sources require a key'
+            assert key is not None, 'non-string sources require a key'
             line = unicodify(item[key])
 
         if filter_line(line, filters):
@@ -195,11 +195,15 @@ def line_iter(source, filters, key=None, delay=0):
 
 
 def unicodify(item):
-    assert isinstance(item, basestring), "unicodify expects a string type"
-    if isinstance(item, str):
-        return item.decode('utf-8')
-    if isinstance(item, unicode):
-        return item
+    if sys.version_info < (3, 0):
+        assert isinstance(item, basestring), "unicodify expects a string type"
+        if isinstance(item, str):
+            item = item.decode('utf-8')
+    else:
+        if isinstance(item, bytes):
+            item = item.decode('utf-8')
+        assert isinstance(item, str)
+    return item
 
 
 def lines(source, filters, key=None):

@@ -136,8 +136,7 @@ class Poet(object):
 
     def normalize_line(self, line, key):
         if utils.isstring(line):
-            if isinstance(line, str):
-                line = line.decode('utf-8')
+            line = utils.unicodify(line)
             return Line(line, None)
         else:
             if not key:

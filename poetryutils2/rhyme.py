@@ -125,6 +125,9 @@ class PhonemeRhymer(object):
         '''this is sort of legacy: it used to presume it might use different
         functions to get different sounds from a word?'''
         p = self.get_phonemes(word)
+        if len(p) <= 1:
+            print('too few phonemes in word %s (%s)' % (word, p), file=sys.stderr)
+            return None
         return self._end_sound(p)
 
     def _adjust_phonemes(self, phonemes):
@@ -178,8 +181,11 @@ class PhonemeRhymer(object):
     def _end_sound(self, phonemes):
         if not phonemes or not len(phonemes):
             raise ValueError('phonemes cannot be None')
+        if len(phonemes) == 1:
+            return phonemes
 
         p = list(reversed(phonemes))
+
         if self.debug:
             print('extracting end sound for %s' % phonemes)
         if p[0] in ipa_vowels:
@@ -200,7 +206,7 @@ class PhonemeRhymer(object):
                     if self.debug:
                         print('breaking on %s' % letter)
                     break
-            return ''.join(reversed(p[:idx+1]))   
+            return ''.join(reversed(p[:idx+1]))
 
     def _are_homophonic(self, phonemes1, phonemes2):
         if phonemes1 == phonemes2:
