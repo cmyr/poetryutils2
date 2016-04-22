@@ -46,7 +46,18 @@ baise
 baiser
 black
 blacks
+bite
+bites
+putes
+pute
+niké
+nické
+niker
+nicker
+chienne
+chiennes
 """
+
 swears_fr = set([x for x in swears_fr.splitlines() if len(x)])
 
 
