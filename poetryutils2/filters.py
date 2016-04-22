@@ -123,8 +123,11 @@ def swears_filter(leakage=0):
     return functools.partial(blacklist_check, **kwargs)
 
 
-def bad_swears_filter():
-    return blacklist_filter(wordsets.bad_swears)
+def bad_swears_filter(lang='en'):
+    if lang == 'en':
+        return blacklist_filter(wordsets.bad_swears)
+    elif lang == 'fr':
+        return blacklist_filter(wordsets.swears_fr)
 
 
 def low_letter_ratio(text, cutoff=0.8):

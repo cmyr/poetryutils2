@@ -32,8 +32,23 @@ niggers
 """
 
 bad_swears = set([x for x in bad_swears.splitlines() if len(x)])
-
 swears.update(bad_swears)
+
+swears_fr = """
+tapette
+pédale
+nique
+niquer
+pute
+suceboule
+raton
+baise
+baiser
+black
+blacks
+"""
+swears_fr = set([x for x in swears_fr.splitlines() if len(x)])
+
 
 custom_ipa = """
 eg ˈɛɡ
